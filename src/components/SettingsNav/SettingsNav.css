@@ -1,0 +1,61 @@
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.settings-nav,
+.settings-nav * {
+  font-family: 'Geist', sans-serif !important;
+}
+
+.settings-nav-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #858585;
+  transition: background 0.12s ease, color 0.12s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-align: left;
+}
+
+.settings-nav-item svg {
+  flex-shrink: 0;
+  opacity: 0.8;
+  transition: opacity 0.12s ease, color 0.12s ease;
+}
+
+/* Hover */
+.settings-nav-item:not(.active):hover {
+  background: #F8F8F8;
+  color: #84601D;
+}
+.settings-nav-item:not(.active):hover svg {
+  opacity: 1;
+  color: #F5A300;
+}
+
+/* Active */
+.settings-nav-item.active,
+.settings-nav-item.active:hover {
+  background: #FFF5E6;
+  color: #84601D;
+  font-weight: 600;
+}
+.settings-nav-item.active svg,
+.settings-nav-item.active:hover svg {
+  opacity: 1;
+  color: #F5A300;
+}

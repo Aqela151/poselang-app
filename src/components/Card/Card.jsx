@@ -1,9 +1,13 @@
+import "./Card.css";
+
 function Card({ title, value, description }) {
   return (
     <div className="card">
-      <span className="card-title">{title}</span>
+      <p className="card-title">{title}</p>
       <h2 className="card-value">{value}</h2>
-      <p className="card-description">{description}</p>
+      <span className="card-description">
+        {description}
+      </span>
     </div>
   );
 }

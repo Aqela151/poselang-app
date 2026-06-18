@@ -1,0 +1,367 @@
+/* ─────────────────────────────────────────
+   LAPORAN PAGE  –  konsisten dgn StokBarang
+───────────────────────────────────────── */
+.lap-wrap {
+  padding: 24px 28px;
+  background: #f8f8f8;
+  min-height: 100vh;
+  font-family: 'Geist', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── Header ── */
+.lap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.lap-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+}
+.lap-header-btns {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lap-btn-outline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+}
+.lap-btn-export {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 10px;
+  background: #f5a300;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+}
+
+/* ── Filter Bar ── */
+.lap-filterbar {
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.lap-filterbar::-webkit-scrollbar { display: none; }
+
+.lap-flabel {
+  font-size: 13px;
+  color: #888;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.lap-dateinput {
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  font-family: 'Geist', sans-serif;
+  outline: none;
+  cursor: pointer;
+  width: 130px;
+  flex-shrink: 0;
+}
+.lap-select {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.lap-period {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.lap-periodb {
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.lap-periodb.active {
+  background: #fff8ec;
+  border-color: #f5a300;
+  color: #f5a300;
+  font-weight: 600;
+}
+.lap-resetbtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ── Stats Cards ── */
+.lap-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+/* ── Shared Card Shell ── */
+.lap-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 22px 24px;
+}
+.lap-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+/* ── Chart ── */
+.lap-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.lap-chart-tabs {
+  display: flex;
+  gap: 6px;
+}
+.lap-charttab {
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid #e6e6e6;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #777;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+}
+.lap-charttab.active {
+  background: #fff8ec;
+  border-color: #f5a300;
+  color: #f5a300;
+  font-weight: 600;
+}
+.lap-chart-body { width: 100%; }
+.lap-svg {
+  width: 100%;
+  height: 150px;
+  display: block;
+}
+.lap-xlabels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.lap-xlabels span {
+  font-size: 11px;
+  color: #bbb;
+}
+
+/* ── Transaksi table header ── */
+.lap-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.lap-searchbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  background: #fff;
+}
+.lap-searchbox input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: #444;
+  font-family: 'Geist', sans-serif;
+  background: transparent;
+  width: 150px;
+}
+.lap-searchbox input::placeholder { color: #bbb; }
+
+/* ── Tabel ── */
+.lap-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.lap-table thead tr {
+  background: #FFCD71;
+}
+
+/* Header kolom — label kecil uppercase */
+.lap-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #555;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.lap-table th:first-child { border-radius: 8px 0 0 8px; }
+.lap-table th:last-child  { border-radius: 0 8px 8px 0; }
+
+.th-orange { color: #f5a300; }
+
+/* Isi baris — lebih kecil dari header */
+.lap-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 10.5px;
+  color: #666;
+  font-weight: 400;
+  vertical-align: middle;
+}
+.lap-table tbody tr:last-child td { border-bottom: none; }
+
+.td-gray { color: #999;  font-size: 10px; }
+.td-bold { font-weight: 700; color: #111; font-size: 11px; }
+
+/* ── Pagination ── */
+.lap-pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+.lap-pages {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.lap-pgbtn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lap-pgbtn.active {
+  background: #f5a300;
+  color: #fff;
+  border-color: #f5a300;
+}
+.lap-pgbtn.arrow { color: #888; }
+
+/* ── Produk Terlaris ── */
+.lap-produk-list {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.lap-produk-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.lap-produk-info {
+  width: 200px;
+  flex-shrink: 0;
+}
+.lap-produk-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111;
+}
+.lap-produk-sub {
+  font-size: 11.5px;
+  color: #bbb;
+  margin-top: 2px;
+}
+.lap-bar-wrap { flex: 1; }
+.lap-bar-track {
+  height: 9px;
+  background: #f0f0f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.lap-bar-fill {
+  height: 100%;
+  background: #f5a300;
+  border-radius: 999px;
+}
+.lap-pcs {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  width: 48px;
+  text-align: right;
+  flex-shrink: 0;
+}

@@ -1,0 +1,71 @@
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #444444;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.12s ease, color 0.12s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  margin-bottom: 1px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sidebar-item:hover:not(.sidebar-item--active):not(.sidebar-item--logout) {
+  background: #F8F8F8;
+  color: #111;
+}
+
+.sidebar-item--active {
+  background: #FFF5E6;
+  color: #F5A300;
+  font-weight: 600;
+}
+
+.sidebar-item-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: opacity 0.12s ease, filter 0.12s ease;
+}
+
+.sidebar-item:hover:not(.sidebar-item--active) .sidebar-item-icon {
+  opacity: 0.65;
+}
+
+.sidebar-item--active .sidebar-item-icon {
+  opacity: 1;
+  filter: invert(65%) sepia(80%) saturate(700%) hue-rotate(5deg) brightness(105%);
+}
+
+.sidebar-item--logout {
+  color: #EF4444;
+}
+
+.sidebar-item--logout .sidebar-item-icon {
+  opacity: 1;
+  filter: invert(32%) sepia(85%) saturate(2000%) hue-rotate(340deg) brightness(95%);
+}
+
+.sidebar-item--logout:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.sidebar-item--logout:hover .sidebar-item-icon {
+  filter: invert(20%) sepia(90%) saturate(2500%) hue-rotate(345deg) brightness(90%);
+}
+
+.sidebar-item-text {
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

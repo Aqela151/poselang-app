@@ -1,0 +1,558 @@
+/* ══════════════════════════════
+   LAYOUT UTAMA
+══════════════════════════════ */
+.kasir-wrap {
+  display: flex;
+  align-items: flex-start;  /* keduanya mulai dari atas, tidak stretch tinggi */
+  min-height: calc(100vh - 56px);
+  background: #f8f8f8;
+  font-family: 'Geist', sans-serif;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+/* ══════════════════════════════
+   KIRI — area produk (flex: 1, no shrink)
+══════════════════════════════ */
+.kasir-left {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kasir-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+}
+
+/* Kategori tombol */
+.kasir-kategori {
+  display: flex;
+  gap: 8px;
+}
+
+.kasir-kat-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 76px;
+  padding: 10px 8px;
+  border: 1.5px solid #e6e6e6;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.kasir-kat-btn.active {
+  border-color: #f5a300;
+  background: #fff8ec;
+  color: #f5a300;
+  font-weight: 600;
+}
+
+/* Header "Pilih Produk" + showing count */
+.kasir-produk-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kasir-showing {
+  font-size: 11.5px;
+  color: #aaa;
+}
+
+/* Search bar */
+.kasir-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 16px;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 14px;
+}
+
+.kasir-search-wrap input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 400;
+  color: #444;
+  font-family: 'Geist', sans-serif;
+}
+
+.kasir-search-wrap input::placeholder {
+  color: #c0c0c0;
+}
+
+/* Grid produk — 3 kolom, card kompak */
+.kasir-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.kasir-prod-card {
+  background: #fff;
+  border: 1.5px solid #ececec;
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.kasir-prod-card:hover {
+  border-color: #f5a300;
+  box-shadow: 0 2px 10px rgba(245, 163, 0, 0.12);
+}
+
+.kasir-prod-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #f5a300;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-family: 'Geist', sans-serif;
+}
+
+.kasir-prod-img {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88px;             /* lebih kecil dari sebelumnya (100px) */
+  background: #fafafa;
+  border-radius: 9px;
+  margin-bottom: 9px;
+  overflow: hidden;
+}
+
+.kasir-prod-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.kasir-prod-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111;
+  line-height: 1.3;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kasir-prod-sub {
+  font-size: 11px;
+  color: #bbb;
+  margin-bottom: 8px;
+}
+
+.kasir-prod-harga {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.kasir-tag {
+  font-size: 10.5px;
+  font-weight: 500;
+  border-radius: 5px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.kasir-tag.eceran {
+  background: #f3f3f3;
+  color: #777;
+}
+
+.kasir-tag.grosir {
+  background: #fff8ec;
+  color: #f5a300;
+}
+
+.kasir-price-eceran {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #333;
+}
+
+.kasir-price-grosir {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #f5a300;
+}
+
+/* ══════════════════════════════
+   KANAN — panel transaksi (ikut scroll halaman)
+══════════════════════════════ */
+.kasir-right {
+  width: 320px;
+  flex-shrink: 0;
+  background: #fff;
+  border-left: 1px solid #ececec;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.kasir-right-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  flex-shrink: 0;
+}
+
+.kasir-right-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #111;
+}
+
+.kasir-trx-no {
+  font-size: 12px;
+  font-weight: 500;
+  color: #bbb;
+}
+
+/* Pelanggan */
+.kasir-pelanggan {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  margin: 0 16px 12px;
+  border: 1px solid #ececec;
+  border-radius: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.kasir-pelanggan-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f3f3f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kasir-pelanggan-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111;
+}
+
+.kasir-pelanggan-sub {
+  font-size: 10.5px;
+  color: #bbb;
+  margin-top: 1px;
+}
+
+.kasir-pelanggan-radio {
+  margin-left: auto;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1.5px solid #ddd;
+  flex-shrink: 0;
+}
+
+/* Keranjang header */
+.kasir-keranjang-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 8px;
+  flex-shrink: 0;
+}
+
+.kasir-keranjang-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.kasir-keranjang-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+}
+
+.kasir-keranjang-count {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.kasir-clear-btn {
+  background: none;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #f5a300;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  padding: 0;
+}
+
+/* Keranjang list — tumbuh sesuai isi, halaman yang scroll */
+.kasir-keranjang-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+}
+
+.kasir-empty {
+  font-size: 12px;
+  color: #ccc;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* Item keranjang */
+.kasir-keranjang-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.kasir-keranjang-item:last-child {
+  border-bottom: none;
+}
+
+.kasir-item-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 7px;
+  background: #f5f5f5;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kasir-item-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.kasir-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kasir-item-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kasir-item-sub {
+  font-size: 10.5px;
+  color: #bbb;
+  margin-top: 1px;
+  margin-bottom: 5px;
+}
+
+.kasir-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kasir-item-price {
+  font-size: 11px;
+  color: #888;
+}
+
+.kasir-item-qty {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kasir-item-qty span {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #111;
+  min-width: 14px;
+  text-align: center;
+}
+
+.kasir-qty-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1.5px solid #e6e6e6;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555;
+  padding: 0;
+}
+
+.kasir-qty-btn.plus {
+  background: #f5a300;
+  border-color: #f5a300;
+  color: #fff;
+}
+
+/* ── Bottom section — tidak grow/shrink, tinggi = kontennya */
+.kasir-bottom {
+  flex: 0 0 auto;
+  padding: 10px 16px 16px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.kasir-metode-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #111;
+}
+
+.kasir-metode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.kasir-metode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 9px;
+  border: 1.5px solid #e6e6e6;
+  border-radius: 11px;
+  background: #fff;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #888;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.kasir-metode-btn.active {
+  border-color: #f5a300;
+  background: #fff8ec;
+  color: #f5a300;
+  font-weight: 600;
+}
+
+.kasir-bayar-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #888;
+}
+
+.kasir-bayar-input {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #e6e6e6;
+  border-radius: 9px;
+  padding: 0 12px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #111;
+  font-family: 'Geist', sans-serif;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.kasir-bayar-input:focus {
+  border-color: #f5a300;
+}
+
+/* Rincian pembayaran */
+.kasir-rincian {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid #f5f5f5;
+  padding-top: 6px;
+}
+
+.kasir-rincian-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #999;
+}
+
+.kasir-rincian-row span:last-child {
+  font-weight: 500;
+  color: #444;
+}
+
+.kasir-rincian-row.total {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.kasir-rincian-row.total span:first-child {
+  color: #111;
+}
+
+.kasir-total-val {
+  color: #f5a300 !important;
+  font-weight: 700 !important;
+}
+
+/* Tombol proses */
+.kasir-proses-btn {
+  width: 100%;
+  height: 42px;
+  border: none;
+  border-radius: 11px;
+  background: #f5a300;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  transition: background 0.15s;
+  margin-top: 2px;
+}
+
+.kasir-proses-btn:hover {
+  background: #e09600;
+}

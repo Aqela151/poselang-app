@@ -1,87 +1,54 @@
 import "./App.css";
-import Card from "./components/Card/Card";
-import Button from "./components/Button/Button";
-import SearchBar from "./components/SearchBar/SearchBar";
+import Sidebar from "./components/Sidebar/Sidebar";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Menu } from "lucide-react";
+import Dashboard from "./pages/Dashboard";
+import Kasir from "./pages/Kasir";
+import StokBarang from "./pages/StokBarang";
+import DataMember from "./pages/DataMember";
+import Laporan from "./pages/Laporan";
+import Settings from "./pages/Settings";
 
 function App() {
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const pageTitle = {
+    "/dashboard": "Dashboard",
+    "/kasir": "Kasir",
+    "/stok-barang": "Stok Barang",
+    "/data-member": "Data Member",
+    "/laporan": "Laporan",
+    "/settings": "Settings",
+  };
+
   return (
     <div className="layout">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <h2 className="logo">POS ElangAnugerah</h2>
+      {/* Overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
 
-        <p className="menu-title">MENU</p>
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <ul className="menu">
-          <li className="active">Dashboard</li>
-          <li>Kasir</li>
-          <li>Stok Barang</li>
-          <li>Data Member</li>
-          <li>Laporan</li>
-        </ul>
-
-        <div className="bottom-menu">
-          <p>Settings</p>
-          <p>Log Out</p>
-        </div>
-      </aside>
-
-      {/* Content */}
-      <main className="content">
-        <h1>Dashboard</h1>
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-          }}
-        >
-          <SearchBar />
-          <Button text="Tambah Barang" />
-        </div>
-
-        <div className="cards">
-          <Card
-            title="Omset"
-            value="Rp 2.000.000"
-            description="Total semua cabang"
-          />
-
-          <Card
-            title="Total Transaksi"
-            value="123"
-            description="Struk tercetak hari ini"
-          />
-
-          <Card
-            title="Member Aktif"
-            value="234"
-            description="+6 Member bulan ini"
-          />
-
-          <Card
-            title="Stok Kritis"
-            value="4 Item"
-            description="Perlu restock segera"
-          />
-        </div>
-
-        <div className="chart">
-          Grafik Omset
-        </div>
-
-        <div className="bottom-section">
-          <div className="table-box">
-            Transaksi Terakhir
-          </div>
-
-          <div className="stock-box">
-            Stok Menipis
-          </div>
-        </div>
-      </main>
+      <div className="content-wrapper">
+        <header className="header">
+          <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>
+            <Menu size={20} />
+          </button>
+          <h1>{pageTitle[location.pathname] || "Dashboard"}</h1>
+        </header>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/kasir" element={<Kasir />} />
+          <Route path="/stok-barang" element={<StokBarang />} />
+          <Route path="/data-member" element={<DataMember />} />
+          <Route path="/laporan" element={<Laporan />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
+      </div>
     </div>
   );
 }
