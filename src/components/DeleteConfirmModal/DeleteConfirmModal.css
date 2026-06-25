@@ -1,0 +1,50 @@
+.delete-confirm-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.delete-icon-wrap {
+  width: 60px;
+  height: 60px;
+  background: #ffeaea;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-confirm-text {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+  max-width: 320px;
+}
+
+.delete-confirm-text strong {
+  color: #111;
+  font-weight: 600;
+}
+
+.modal-btn-delete {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  transition: background 0.15s ease;
+}
+
+.modal-btn-delete:hover {
+  background: #dc2626;
+}

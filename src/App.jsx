@@ -1,8 +1,8 @@
 import "./App.css";
-import Sidebar from "./components/Sidebar/Sidebar";
-import { Routes, Route, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Menu } from "lucide-react";
+import { Routes, Route, useLocation } from "react-router-dom";
+import Sidebar from "./components/Sidebar/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Kasir from "./pages/Kasir";
 import StokBarang from "./pages/StokBarang";
@@ -13,6 +13,7 @@ import Settings from "./pages/Settings";
 function App() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const pageTitle = {
     "/dashboard": "Dashboard",
@@ -24,21 +25,22 @@ function App() {
   };
 
   return (
-    <div className="layout">
-      {/* Overlay */}
-      {sidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className={`layout ${collapsed ? "sidebar-collapsed" : ""}`}>
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed(!collapsed)}
+      />
 
       <div className="content-wrapper">
         <header className="header">
           <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>
-            <Menu size={20} />
+            <Menu size={22} />
           </button>
           <h1>{pageTitle[location.pathname] || "Dashboard"}</h1>
         </header>
+
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -49,6 +51,10 @@ function App() {
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </div>
+
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
     </div>
   );
 }

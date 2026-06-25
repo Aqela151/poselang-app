@@ -365,3 +365,61 @@
   text-align: right;
   flex-shrink: 0;
 }
+
+@media (max-width: 768px) {
+  .lap-wrap {
+    padding: 16px;
+  }
+
+  .lap-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .lap-header-btns {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .lap-filterbar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .lap-period {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .lap-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .lap-card {
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  .lap-table {
+    min-width: 650px;
+  }
+
+  .lap-chart-header,
+  .lap-table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .lap-searchbox {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .lap-stats {
+    grid-template-columns: 1fr;
+  }
+}

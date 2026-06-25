@@ -200,3 +200,78 @@
   font-weight: 400;
 }
 .transaction-table tbody tr:last-child td { border-bottom: none; }
+
+@media (max-width: 1024px) {
+  .bottom-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-content {
+    padding: 16px;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .card {
+    padding: 14px 16px;
+  }
+
+  .card h2 {
+    font-size: 24px;
+  }
+
+  .chart-card {
+    padding: 16px;
+  }
+
+  .chart-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .bottom-section {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .table-box,
+  .stock-box {
+    padding: 16px;
+  }
+
+  .branch-bar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px 14px;
+    gap: 6px;
+  }
+
+  .stock-item {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .stock-right {
+    align-items: flex-start;
+  }
+
+  .transaction-box {
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  .transaction-table {
+    min-width: 500px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}

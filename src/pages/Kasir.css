@@ -556,3 +556,99 @@
 .kasir-proses-btn:hover {
   background: #e09600;
 }
+
+/* =========================
+   TABLET
+========================= */
+@media (max-width: 1024px) {
+
+  .kasir-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .kasir-right {
+    width: 280px;
+  }
+
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+@media (max-width: 768px) {
+
+  .kasir-wrap {
+    flex-direction: column;
+  }
+
+  .kasir-left {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .kasir-right {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #ececec;
+  }
+
+  .kasir-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .kasir-kategori {
+    overflow-x: auto;
+  }
+
+  .kasir-produk-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+}
+
+
+/* =========================
+   HP KECIL
+========================= */
+@media (max-width: 480px) {
+
+  .kasir-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kasir-left {
+    padding: 12px;
+  }
+
+  .kasir-prod-card {
+    padding: 10px;
+  }
+
+  .kasir-search-wrap {
+    height: 46px;
+  }
+
+  .kasir-right-header {
+    padding: 12px;
+  }
+
+  .kasir-pelanggan {
+    margin: 0 12px 12px;
+  }
+
+  .kasir-keranjang-header {
+    padding: 0 12px 8px;
+  }
+
+  .kasir-keranjang-list {
+    padding: 0 12px;
+  }
+
+  .kasir-bottom {
+    padding: 12px;
+  }
+
+}

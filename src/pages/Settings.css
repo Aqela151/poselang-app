@@ -1,36 +1,111 @@
+/* ─────────────────────────────────────────
+   Settings page — full responsive
+   Breakpoints: mobile ≤ 640px
+───────────────────────────────────────── */
+
 .settings-page {
   padding: 24px;
-}
-
-.settings-title {
-  margin-bottom: 24px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #111;
   font-family: 'Geist', sans-serif;
 }
 
+.settings-title {
+  margin: 0 0 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+}
+
+/* ── Desktop two-column layout ── */
 .settings-layout {
   display: flex;
-  gap: 24px;
+  gap: 20px;
   align-items: flex-start;
 }
 
 .settings-sidebar {
-  width: 220px;
+  width: 200px;
   flex-shrink: 0;
   background: white;
   border-radius: 16px;
-  padding: 12px;
+  padding: 8px;
+  position: sticky;
+  top: 24px;
 }
 
 .settings-content {
   flex: 1;
+  min-width: 0;
   background: white;
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
 }
 
+/* ── Mobile: hide sidebar, show bottom nav ── */
+@media (max-width: 640px) {
+  .settings-page {
+    padding: 12px 12px 88px; /* bottom room for nav bar */
+  }
+
+  .settings-sidebar {
+    display: none;
+  }
+
+  .settings-content {
+    padding: 16px;
+    border-radius: 12px;
+  }
+}
+
+/* ─────────────── Bottom nav ─────────────── */
+.s-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .s-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: #ffffff;
+    border-top: 1px solid #efefef;
+    z-index: 200;
+  }
+
+  .s-bottom-nav__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    padding: 0 2px;
+    font-size: 10px;
+    font-family: 'Geist', sans-serif;
+    font-weight: 500;
+    color: #b0b0b0;
+    cursor: pointer;
+    transition: color 0.12s ease;
+    line-height: 1.2;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .s-bottom-nav__item svg {
+    flex-shrink: 0;
+    stroke-width: 1.8;
+  }
+
+  .s-bottom-nav__item--active {
+    color: #F5A300;
+  }
+}
+
+/* ─────────────── Section ─────────────── */
 .settings-section {
   display: flex;
   flex-direction: column;
@@ -41,6 +116,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
 .settings-section-title {
@@ -49,7 +125,7 @@
   color: #111;
 }
 
-/* Save / Tambah button */
+/* ─────────────── Save / Add button ─────────────── */
 .settings-save-btn {
   display: flex;
   align-items: center;
@@ -64,12 +140,12 @@
   cursor: pointer;
   font-family: 'Geist', sans-serif;
   transition: background 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.settings-save-btn:hover {
-  background: #e09500;
-}
+.settings-save-btn:hover { background: #e09500; }
 
-/* Logo upload */
+/* ─────────────── Logo upload ─────────────── */
 .settings-logo-upload {
   border: 1.5px dashed #e0e0e0;
   border-radius: 12px;
@@ -81,35 +157,37 @@
   gap: 4px;
   cursor: pointer;
   transition: background 0.15s ease;
+  min-height: 90px;
 }
 .settings-logo-upload:hover { background: #fafafa; }
 .settings-logo-label { font-size: 12px; font-weight: 500; color: #aaa; }
-.settings-logo-hint { font-size: 11px; color: #ccc; }
-.settings-logo-preview {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  border-radius: 8px;
-}
+.settings-logo-hint  { font-size: 11px; color: #ccc; }
+.settings-logo-preview { width: 80px; height: 80px; object-fit: contain; border-radius: 8px; }
 
-/* Form */
+/* ─────────────── Form ─────────────── */
 .settings-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
+@media (max-width: 480px) {
+  .settings-form-grid { grid-template-columns: 1fr; }
+}
+
 .settings-form-group {
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
+
 .settings-label {
   font-size: 12px;
   font-weight: 500;
   color: #888;
 }
+
 .settings-input {
-  height: 36px;
+  height: 38px;
   border: 1.5px solid #ededed;
   border-radius: 8px;
   padding: 0 12px;
@@ -117,41 +195,42 @@
   font-family: 'Geist', sans-serif;
   color: #111;
   outline: none;
-  transition: border-color 0.15s ease;
   background: white;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
 }
 .settings-input:focus { border-color: #F5A300; }
 
-/* ── Akun Saya ── */
+/* ─────────────── Akun Saya ─────────────── */
 .akun-profile-row {
   display: flex;
   align-items: center;
   gap: 20px;
   padding: 4px 0 8px;
 }
+
 .akun-avatar {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   border: 2px solid #F5A300;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: #F5A300;
   background: white;
   flex-shrink: 0;
   overflow: hidden;
 }
-.akun-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.akun-info { display: flex; flex-direction: column; gap: 4px; }
-.akun-name { font-size: 18px; font-weight: 700; color: #111; }
+.akun-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.akun-info { display: flex; flex-direction: column; gap: 3px; }
+.akun-name { font-size: 17px; font-weight: 700; color: #111; }
 .akun-role { font-size: 13px; color: #999; }
+
 .akun-ganti-foto-btn {
   display: flex;
   align-items: center;
@@ -166,28 +245,28 @@
   color: #555;
   cursor: pointer;
   font-family: 'Geist', sans-serif;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, color 0.15s;
+  width: fit-content;
 }
 .akun-ganti-foto-btn:hover { border-color: #F5A300; color: #F5A300; }
 
-/* ── Pajak toggle rows ── */
+/* ─────────────── Toggle rows ─────────────── */
 .settings-toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 14px 0;
   border-bottom: 1px solid #f5f5f5;
 }
 .settings-toggle-row:last-child { border-bottom: none; }
-.settings-toggle-info { display: flex; flex-direction: column; gap: 3px; }
+
+.settings-toggle-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .settings-toggle-label { font-size: 14px; font-weight: 600; color: #111; }
-.settings-toggle-desc { font-size: 12px; color: #aaa; }
-.settings-toggle-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
+.settings-toggle-desc  { font-size: 12px; color: #aaa; }
+
+.settings-toggle-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
 .settings-percent-input {
   width: 52px;
   height: 32px;
@@ -203,7 +282,7 @@
 .settings-percent-input:focus { border-color: #F5A300; }
 .settings-percent-sign { font-size: 13px; color: #aaa; }
 
-/* Toggle switch */
+/* ─────────────── Toggle switch ─────────────── */
 .toggle-switch {
   position: relative;
   width: 42px;
@@ -211,6 +290,7 @@
   flex-shrink: 0;
 }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
 .toggle-slider {
   position: absolute;
   inset: 0;
@@ -222,26 +302,33 @@
 .toggle-slider::before {
   content: '';
   position: absolute;
-  width: 18px;
-  height: 18px;
-  left: 3px;
-  top: 3px;
+  width: 18px; height: 18px;
+  left: 3px; top: 3px;
   background: white;
   border-radius: 50%;
   transition: transform 0.2s;
   box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
-.toggle-switch input:checked + .toggle-slider { background: #F5A300; }
-.toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+.toggle-switch input:checked + .toggle-slider            { background: #F5A300; }
+.toggle-switch input:checked + .toggle-slider::before   { transform: translateX(18px); }
 
-/* ── Pengguna table ── */
+/* ─────────────── Pengguna table ─────────────── */
+.pengguna-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
 .pengguna-table {
   width: 100%;
+  min-width: 420px;
   border-collapse: collapse;
+  table-layout: auto;
 }
-.pengguna-table thead tr {
-  background: #FFF8EC;
-}
+
+.pengguna-table thead tr { background: #FFF8EC; }
+
 .pengguna-table th {
   font-size: 12px;
   font-weight: 600;
@@ -249,24 +336,59 @@
   padding: 10px 12px;
   text-align: left;
 }
+
 .pengguna-table td {
-  padding: 12px 12px;
+  padding: 12px;
   font-size: 13px;
   color: #333;
   border-bottom: 1px solid #f5f5f5;
+  overflow: hidden;
 }
 .pengguna-table tbody tr:last-child td { border-bottom: none; }
+
+/* hide Cabang column on mobile */
+@media (max-width: 480px) {
+  .col-hide-mobile { display: none; }
+}
+
 .pengguna-avatar-cell {
   display: flex;
   align-items: center;
   gap: 10px;
+  overflow: hidden;
 }
+
+.pengguna-name-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.pengguna-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Show branch as sub-label only on mobile (when the column is hidden) */
+.pengguna-cabang-sub {
+  display: none;
+  font-size: 11px;
+  color: #aaa;
+}
+@media (max-width: 480px) {
+  .pengguna-cabang-sub { display: block; }
+}
+
 .pengguna-avatar {
-  width: 30px;
-  height: 30px;
+  width: 30px; height: 30px;
   border-radius: 50%;
   background: #FFF3D6;
-  color: #F5A300;
+  color: #c47a00;
   font-size: 11px;
   font-weight: 700;
   display: flex;
@@ -274,31 +396,32 @@
   justify-content: center;
   flex-shrink: 0;
 }
+
 .pengguna-badge {
   display: inline-block;
-  background: #FFF3D6;
-  color: #F5A300;
   font-size: 11px;
   font-weight: 600;
   border-radius: 6px;
-  padding: 2px 10px;
+  padding: 3px 10px;
+  white-space: nowrap;
 }
-.pengguna-badge.kasir {
-  background: #FFF3D6;
-  color: #F5A300;
-}
+.pengguna-badge.kasir { background: #FFF3D6; color: #c47a00; }
+.pengguna-badge.admin { background: #EEF2FF; color: #4338ca; }
+
+.pengguna-actions { display: flex; gap: 4px; align-items: center; }
+
 .pengguna-action-btn {
   background: white;
   border: 1.5px solid #ededed;
   border-radius: 6px;
-  width: 28px;
-  height: 28px;
+  width: 28px; height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  margin-right: 4px;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+  color: #666;
 }
-.pengguna-action-btn:hover { border-color: #F5A300; }
-.pengguna-action-btn.delete:hover { border-color: #ef4444; }
+.pengguna-action-btn:hover        { border-color: #F5A300; color: #F5A300; }
+.pengguna-action-btn.delete:hover { border-color: #ef4444; color: #ef4444; }

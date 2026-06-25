@@ -1,0 +1,50 @@
+.view-barang-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.view-barang-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.view-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.view-field.full {
+  grid-column: 1 / -1;
+}
+
+.view-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #aaa;
+}
+
+.view-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  height: 20px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  font-family: 'Geist', sans-serif;
+}
+
+.aman     { background: #eaf8ef; color: #22a55b; }
+.menipis  { background: #fff4df; color: #f59e0b; }
+.habis    { background: #ffeaea; color: #ef4444; }
