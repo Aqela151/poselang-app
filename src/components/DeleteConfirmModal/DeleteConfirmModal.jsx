@@ -1,6 +1,7 @@
 import Modal from "../Modal/Modal";
 import { Trash2 } from "lucide-react";
 import "./DeleteConfirmModal.css";
+import api from "../../services/api";
 
 export default function DeleteConfirmModal({ isOpen, onClose, member, onConfirm }) {
   if (!member) return null;

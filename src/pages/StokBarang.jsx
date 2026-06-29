@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, Pencil, Trash2, Search, SlidersHorizontal, ChevronDown, Plus } from "lucide-react";
 import Card from "../components/Card/Card";
 import TambahBarangModal from "../components/TambahBarangModal/TambahBarangModal";
@@ -6,24 +6,30 @@ import EditBarangModal from "../components/EditBarangModal/EditBarangModal";
 import DeleteBarangModal from "../components/DeleteBarangModal/DeleteBarangModal";
 import ViewBarangModal from "../components/ViewBarangModal/ViewBarangModal";
 import "./StokBarang.css";
-
-const initialProducts = [
-  { name: "GS Astra MF NS40Z", sub: "Aki kering", sku: "AK-001", kategori: "Aki Kering", eceran: "800.000", grosir: "500.000", stok: 42, status: "aman" },
-  { name: "GS Astra MF NS60", sub: "Aki kering", sku: "AK-002", kategori: "Aki Kering", eceran: "1.000.000", grosir: "800.000", stok: 8, status: "menipis" },
-  { name: "Incoe50", sub: "Aki basah", sku: "AB-0010", kategori: "Aki Basah", eceran: "445.000", grosir: "400.000", stok: 5, status: "menipis" },
-  { name: "Yuasa YB5L-B", sub: "Aki motor", sku: "AM-0021", kategori: "Aki Motor", eceran: "240.000", grosir: "215.000", stok: 0, status: "habis" },
-  { name: "Kabel Terminal (+)", sub: "Kabel aksesoris", sku: "KA-003", kategori: "Kabel Aksesoris", eceran: "35.000", grosir: "30.000", stok: 120, status: "aman" },
-];
+import api from "../services/api";
 
 const statusLabel = { aman: "Aman", menipis: "Menipis", habis: "Habis" };
 
 function StokBarang() {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
   const [tambahOpen, setTambahOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedBarang, setSelectedBarang] = useState(null);
+
+  useEffect(() => {
+  getProduk();
+}, []);
+
+const getProduk = async () => {
+  try {
+    const res = await api.get("/produk");
+    setProducts(res.data);
+  } catch (err) {
+    console.log(err);
+  }
+};
 
   const handleView = (barang) => {
     setSelectedBarang(barang);
@@ -41,14 +47,14 @@ function StokBarang() {
   };
 
   const handleSaveEdit = (updated) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.sku === updated.sku ? updated : p))
-    );
-  };
+  setProducts((prev) =>
+    prev.map((p) => (p.id === updated.id ? updated : p))
+  );
+};
 
   const handleConfirmDelete = (target) => {
-    setProducts((prev) => prev.filter((p) => p.sku !== target.sku));
-  };
+  setProducts((prev) => prev.filter((p) => p.id !== target.id));
+};
 
   return (
     <div className="stok-container">
@@ -97,17 +103,27 @@ function StokBarang() {
           </thead>
           <tbody>
             {products.map((p) => (
-              <tr key={p.sku}>
+              <tr key={p.id}>
                 <td>
-                  <div className="prod-name">{p.name}</div>
-                  <div className="prod-sub">{p.sub}</div>
+  <div className="prod-name">{p.nama_produk}</div>
+  <div className="prod-sub">{p.kode_produk}</div>
+</td>
+                <td>{p.kode_produk}</td>
+<td>{p.kode_produk}</td>
+<td>{p.kategori_id}</td>
+<td>Rp {Number(p.harga_eceran).toLocaleString("id-ID")}</td>
+<td>Rp {Number(p.harga_grosir).toLocaleString("id-ID")}</td>
+<td>{p.stok}</td>
+                <td>
+  {p.stok == 0 ? (
+    <span className="status habis">Habis</span>
+  ) : p.stok < 10 ? (
+    <span className="status menipis">Menipis</span>
+  ) : (
+    <span className="status aman">Aman</span>
+  )}
+
                 </td>
-                <td>{p.sku}</td>
-                <td>{p.kategori}</td>
-                <td>{p.eceran}</td>
-                <td>{p.grosir}</td>
-                <td>{p.stok}</td>
-                <td><span className={`status ${p.status}`}>{statusLabel[p.status]}</span></td>
                 <td>
                   <div className="aksi-btns">
                     <Eye size={16} onClick={() => handleView(p)} />
