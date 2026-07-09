@@ -13,8 +13,8 @@ export default function DeleteConfirmModal({ isOpen, onClose, member, onConfirm 
           <Trash2 size={28} color="#ef4444" />
         </div>
         <p className="delete-confirm-text">
-          Yakin ingin menghapus member <strong>{member.name}</strong>? Tindakan ini tidak bisa dibatalkan.
-        </p>
+  Yakin ingin menghapus member <strong>{member.nama}</strong>?
+</p>
         <div className="modal-footer">
           <button className="modal-btn-cancel" onClick={onClose}>Batal</button>
           <button className="modal-btn-delete" onClick={() => { onConfirm(member); onClose(); }}>

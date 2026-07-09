@@ -10,6 +10,13 @@ import api from "../services/api";
 
 const statusLabel = { aman: "Aman", menipis: "Menipis", habis: "Habis" };
 
+const categoryLabelMap = {
+  1: "Aki Kering",
+  2: "Aki Basah",
+  3: "Aki Motor",
+  4: "Kabel Aksesoris",
+};
+
 function StokBarang() {
   const [products, setProducts] = useState([]);
   const [tambahOpen, setTambahOpen] = useState(false);
@@ -17,6 +24,10 @@ function StokBarang() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedBarang, setSelectedBarang] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest");
 
   useEffect(() => {
   getProduk();
@@ -56,30 +67,85 @@ const getProduk = async () => {
   setProducts((prev) => prev.filter((p) => p.id !== target.id));
 };
 
+  const getStatusKey = (stok) => {
+    if (Number(stok) === 0) return "habis";
+    if (Number(stok) < 10) return "menipis";
+    return "aman";
+  };
+
+  const getCategoryLabel = (product) => {
+    const rawValue = product.kategori_name || product.kategori || product.category_name || product.category || product.kategori_id;
+
+    if (typeof rawValue === "string" && rawValue.trim()) {
+      const mapped = categoryLabelMap[Number(rawValue)] ?? rawValue;
+      return mapped;
+    }
+
+    const id = Number(product.kategori_id ?? product.kategori ?? 0);
+    return categoryLabelMap[id] || "Lainnya";
+  };
+
+  const categoryOptions = Array.from(new Set(products.map((product) => getCategoryLabel(product))));
+
+  const filteredProducts = products.filter((product) => {
+    const query = searchTerm.toLowerCase();
+    const searchableText = `${product.nama_produk || ""} ${product.kode_produk || ""} ${getCategoryLabel(product)}`.toLowerCase();
+    const matchesSearch = searchableText.includes(query);
+    const categoryValue = getCategoryLabel(product);
+    const matchesCategory = categoryFilter === "all" || categoryValue === categoryFilter;
+    const matchesStock = stockFilter === "all" || getStatusKey(product.stok) === stockFilter;
+
+    return matchesSearch && matchesCategory && matchesStock;
+  });
+
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    const idA = Number(a.id || 0);
+    const idB = Number(b.id || 0);
+
+    return sortOrder === "newest" ? idB - idA : idA - idB;
+  });
+
+  const totalStok = products.reduce((sum, p) => sum + Number(p.stok || 0), 0);
+  const stokMenipis = products.filter((p) => Number(p.stok) > 0 && Number(p.stok) < 10).length;
+  const stokHabis = products.filter((p) => Number(p.stok) === 0).length;
+
   return (
     <div className="stok-container">
       <div className="stats-cards">
-        <Card title="Total Produk" value="248" description="Di semua kategori" />
-        <Card title="Stok Produk" value="1.842" description="+24 dari kemarin" />
-        <Card title="Stok Menipis" value="12" description="Perlu restock segera" />
-        <Card title="Stok Habis" value="5" description="Tidak tersedia" />
+        <Card title="Total Produk" value={products.length} description="Di semua kategori" />
+        <Card title="Stok Produk" value={totalStok.toLocaleString("id-ID")} description="Total keseluruhan" />
+        <Card title="Stok Menipis" value={stokMenipis} description="Perlu restock segera" />
+        <Card title="Stok Habis" value={stokHabis} description="Tidak tersedia" />
       </div>
 
       <div className="filter-box">
         <div className="search-wrap">
           <Search size={16} className="search-icon" />
-          <input type="text" placeholder="Cari nama produk, SKU" />
+          <input
+            type="text"
+            placeholder="Cari nama produk, SKU"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <div className="filter-select">
-          Semua Kategori <ChevronDown size={14} />
-        </div>
-        <div className="filter-select">
-          Semua Stok <ChevronDown size={14} />
-        </div>
-        <button className="filter-btn">
-          <SlidersHorizontal size={14} />
-          Filter
-        </button>
+        <select className="filter-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+          <option value="all">Semua Kategori</option>
+          {categoryOptions.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+        <select className="filter-select" value={stockFilter} onChange={(e) => setStockFilter(e.target.value)}>
+          <option value="all">Semua Stok</option>
+          <option value="aman">Aman</option>
+          <option value="menipis">Menipis</option>
+          <option value="habis">Habis</option>
+        </select>
+        <select className="filter-select" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+          <option value="newest">Terbaru</option>
+          <option value="oldest">Terlama</option>
+        </select>
         <button className="add-btn" onClick={() => setTambahOpen(true)}>
           <Plus size={16} />
           Tambah Barang
@@ -102,25 +168,24 @@ const getProduk = async () => {
             </tr>
           </thead>
           <tbody>
-            {products.map((p) => (
+            {sortedProducts.map((p) => (
               <tr key={p.id}>
                 <td>
   <div className="prod-name">{p.nama_produk}</div>
   <div className="prod-sub">{p.kode_produk}</div>
 </td>
                 <td>{p.kode_produk}</td>
-<td>{p.kode_produk}</td>
-<td>{p.kategori_id}</td>
+<td>{getCategoryLabel(p)}</td>
 <td>Rp {Number(p.harga_eceran).toLocaleString("id-ID")}</td>
 <td>Rp {Number(p.harga_grosir).toLocaleString("id-ID")}</td>
 <td>{p.stok}</td>
                 <td>
-  {p.stok == 0 ? (
-    <span className="status habis">Habis</span>
-  ) : p.stok < 10 ? (
-    <span className="status menipis">Menipis</span>
+  {getStatusKey(p.stok) === "habis" ? (
+    <span className="status habis">{statusLabel.habis}</span>
+  ) : getStatusKey(p.stok) === "menipis" ? (
+    <span className="status menipis">{statusLabel.menipis}</span>
   ) : (
-    <span className="status aman">Aman</span>
+    <span className="status aman">{statusLabel.aman}</span>
   )}
 
                 </td>
@@ -137,7 +202,7 @@ const getProduk = async () => {
         </table>
 
         <div className="pagination">
-          <span className="pag-info">Menampilkan 5 dari 150 produk</span>
+          <span className="pag-info">Menampilkan {sortedProducts.length} dari {products.length} produk</span>
           <div className="pag-pages">
             <button className="pag-btn arrow">‹</button>
             <button className="pag-btn active">1</button>

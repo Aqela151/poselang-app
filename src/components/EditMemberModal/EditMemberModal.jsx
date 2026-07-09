@@ -1,24 +1,29 @@
 import { useState, useEffect } from "react";
 import Modal from "../Modal/Modal";
 import { Check } from "lucide-react";
+import api from "../../services/api";
 
 export default function EditMemberModal({ isOpen, onClose, member, onSave }) {
   const [form, setForm] = useState({
-    name: "", email: "", noHp: "", alamat: "", level: "Silver", bergabung: ""
-  });
+  nama:"",
+  no_hp:"",
+  email:"",
+  alamat:"",
+  level:"silver",
+  total_transaksi:"",
+});
 
   useEffect(() => {
     if (member) {
       setForm({
-        name: member.name || "",
-        email: member.email || "",
-        noHp: member.noHp || "",
-        alamat: member.alamat || "",
-        level: member.level
-          ? member.level.charAt(0).toUpperCase() + member.level.slice(1)
-          : "Silver",
-        bergabung: member.bergabung || "",
-      });
+    nama: member.nama || "",
+    no_hp: member.no_hp || "",
+    email: member.email || "",
+    alamat: member.alamat || "",
+    level: member.level?.toLowerCase() || "silver",
+    total_transaksi: member.total_transaksi || "",
+});
+
     }
   }, [member]);
 
@@ -26,21 +31,38 @@ export default function EditMemberModal({ isOpen, onClose, member, onSave }) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSave = () => {
-    onSave({ ...member, ...form, level: form.level.toLowerCase() });
+  const handleSave = async () => {
+  try {
+    await api.put(`/member/${member.id}`, form);
+
+    onSave({
+      ...member,
+      ...form,
+    });
+
+    alert("Member berhasil diupdate");
     onClose();
-  };
+  } catch (err) {
+    console.log(err);
+    alert("Gagal update member");
+  }
+};
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Member">
       <div className="modal-form-grid">
         <div className="modal-form-group">
           <label className="modal-label">Nama Lengkap</label>
-          <input className="modal-input" name="name" value={form.name} onChange={handleChange} placeholder="Nama member" />
+          <input className="modal-input" name="nama" value={form.nama} onChange={handleChange} placeholder="Nama member" />
         </div>
         <div className="modal-form-group">
           <label className="modal-label">No.Hp</label>
-          <input className="modal-input" name="noHp" value={form.noHp} onChange={handleChange} placeholder="0812-xxxx-xxxx" />
+          <input
+  className="modal-input"
+  name="no_hp"
+  value={form.no_hp}
+  onChange={handleChange}
+/>
         </div>
         <div className="modal-form-group full">
           <label className="modal-label">Email</label>
@@ -53,15 +75,20 @@ export default function EditMemberModal({ isOpen, onClose, member, onSave }) {
         <div className="modal-form-group">
           <label className="modal-label">Level Member</label>
           <select className="modal-select" name="level" value={form.level} onChange={handleChange}>
-            <option>Silver</option>
-            <option>Gold</option>
-            <option>Platinum</option>
+           <option value="silver">Silver</option>
+<option value="gold">Gold</option>
+<option value="platinum">Platinum</option>
           </select>
         </div>
         <div className="modal-form-group">
-          <label className="modal-label">Tanggal Bergabung</label>
-          <input className="modal-input" name="bergabung" value={form.bergabung} onChange={handleChange} />
-        </div>
+  <label>Total Transaksi</label>
+  <input
+    className="modal-input"
+    name="total_transaksi"
+    value={form.total_transaksi}
+    onChange={handleChange}
+  />
+</div>
         <div className="modal-footer">
           <button className="modal-btn-cancel" onClick={onClose}>Batal</button>
           <button className="modal-btn-save" onClick={handleSave}>
@@ -69,6 +96,7 @@ export default function EditMemberModal({ isOpen, onClose, member, onSave }) {
           </button>
         </div>
       </div>
+      
     </Modal>
   );
 }

@@ -1,21 +1,23 @@
-import { useState } from "react";
-import { Search, Plus, Minus, Trash2, QrCode, Banknote, ChevronDown, User, Package, Wrench, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Plus, Minus, QrCode, Banknote, User, Package, Wrench } from "lucide-react";
 import akiImg from "../assets/images/image1.png";
 import "./Kasir.css";
+import api from "../services/api";
 
-const produkList = [
-  { id: 1, nama: "GS Astra Maintenance Free (MF)", sub: "Kering", stok: 12, eceran: 1000000, grosir: 900000 },
-  { id: 2, nama: "GS Astra Maintenance Free (MF)", sub: "Kering", stok: 12, eceran: 1000000, grosir: 900000 },
-  { id: 3, nama: "GS Astra Maintenance Free (MF)", sub: "Kering", stok: 12, eceran: 1000000, grosir: 900000 },
-  { id: 4, nama: "GS Astra Maintenance Free (MF)", sub: "Kering", stok: 12, eceran: 1000000, grosir: 900000 },
-  { id: 5, nama: "GS Astra Maintenance Free (MF)", sub: "Kering", stok: 12, eceran: 1000000, grosir: 900000 },
-  { id: 6, nama: "GS Astra Maintenance Free (MF)", sub: "Kering", stok: 12, eceran: 1000000, grosir: 900000 },
-  { id: 7, nama: "GS Astra Maintenance Free (MF)", sub: "Kering", stok: 12, eceran: 1000000, grosir: 900000 },
-  { id: 8, nama: "GS Astra Maintenance Free (MF)", sub: "Kering", stok: 12, eceran: 1000000, grosir: 900000 },
-  { id: 9, nama: "GS Astra Maintenance Free (MF)", sub: "Kering", stok: 12, eceran: 1000000, grosir: 900000 },
-];
+const fmt = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
 
-const fmt = (n) => "Rp " + n.toLocaleString("id-ID");
+const categoryLabelMap = {
+  1: "Aki Kering",
+  2: "Aki Basah",
+  3: "Aki Motor",
+  4: "Kabel Aksesoris",
+};
+
+const generateTrxCode = () => {
+  const now = new Date();
+  const pad = (value) => String(value).padStart(2, "0");
+  return `TRX-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+};
 
 function Kasir() {
   const [kategori, setKategori] = useState("Produk");
@@ -23,9 +25,37 @@ function Kasir() {
   const [keranjang, setKeranjang] = useState([]);
   const [metodeBayar, setMetodeBayar] = useState("tunai");
   const [bayar, setBayar] = useState("");
+  const [produkList, setProdukList] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [trxCode, setTrxCode] = useState("TRX-000000");
+  const [lastTransaction, setLastTransaction] = useState(null);
 
-  const filtered = produkList.filter(p =>
-    p.nama.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    getProduk();
+    getMembers();
+  }, []);
+
+  const getProduk = async () => {
+    try {
+      const res = await api.get("/produk");
+      setProdukList(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const getMembers = async () => {
+    try {
+      const res = await api.get("/member");
+      setMembers(res.data || []);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const filtered = produkList.filter((p) =>
+    (p.nama_produk || "").toLowerCase().includes(search.toLowerCase())
   );
 
   const addToCart = (produk) => {
@@ -42,17 +72,152 @@ function Kasir() {
     );
   };
 
-  const removeItem = (id) => setKeranjang(prev => prev.filter(k => k.id !== id));
+  const removeItem = (id) => setKeranjang((prev) => prev.filter((k) => k.id !== id));
   const clearCart = () => setKeranjang([]);
 
   const totalItems = keranjang.reduce((s, k) => s + k.qty, 0);
-  const subtotal = keranjang.reduce((s, k) => s + k.eceran * k.qty, 0);
+  const subtotal = keranjang.reduce((s, k) => s + Number(k.harga_eceran) * k.qty, 0);
   const tax = Math.round(subtotal * 0.03);
   const total = subtotal + tax;
   const bayarNum = parseInt(bayar.replace(/\D/g, "")) || 0;
   const kembali = bayarNum - total;
 
   const hasCart = keranjang.length > 0;
+
+  const handleMemberSelect = (e) => {
+    const memberId = e.target.value;
+    const member = members.find((m) => String(m.id) === memberId) || null;
+    setSelectedMember(member);
+  };
+
+  const printReceipt = () => {
+    if (!lastTransaction) return;
+
+    const date = new Date(lastTransaction.tanggal || new Date()).toLocaleString("id-ID");
+    const items = lastTransaction.items || [];
+    const rows = items
+      .map((item) => {
+        const name = item.nama_produk || item.nama || item.produk?.nama_produk || "-";
+        const qty = item.qty || 0;
+        const price = Number(item.harga || item.harga_eceran || 0);
+        const subtotalRow = Number(item.subtotal ?? (qty * price) ?? 0);
+        return `
+          <tr>
+            <td>${name}</td>
+            <td style="text-align:right;">${qty}</td>
+            <td style="text-align:right;">Rp ${price.toLocaleString("id-ID")}</td>
+            <td style="text-align:right;">Rp ${subtotalRow.toLocaleString("id-ID")}</td>
+          </tr>`;
+      })
+      .join("");
+
+    const html = `
+      <html>
+        <head>
+          <title>Struk ${lastTransaction.kode_transaksi || trxCode}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #000; }
+            h2 { margin-bottom: 8px; }
+            .section { margin-bottom: 16px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            th, td { padding: 8px 4px; border-bottom: 1px solid #ddd; }
+            th { text-align: left; }
+            .right { text-align: right; }
+          </style>
+        </head>
+        <body>
+          <h2>Nama Toko</h2>
+          <div>Nomor: ${lastTransaction.kode_transaksi || trxCode}</div>
+          <div>Tanggal: ${date}</div>
+          <div>Member: ${selectedMember?.nama || "Umum"}</div>
+          <div class="section">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produk</th>
+                  <th class="right">Qty</th>
+                  <th class="right">Harga</th>
+                  <th class="right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+            </table>
+          </div>
+          <div class="section">
+            <div>Total: Rp ${Number(lastTransaction.total).toLocaleString("id-ID")}</div>
+            <div>Bayar: Rp ${Number(lastTransaction.bayar).toLocaleString("id-ID")}</div>
+            <div>Kembali: Rp ${Number(lastTransaction.kembali).toLocaleString("id-ID")}</div>
+          </div>
+          <div>Terima kasih.</div>
+        </body>
+      </html>`;
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Tidak dapat membuka jendela cetak");
+      return;
+    }
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
+  const prosesTransaksi = async () => {
+    if (keranjang.length === 0) {
+      alert("Keranjang masih kosong");
+      return;
+    }
+
+    if (bayarNum < total) {
+      alert("Uang pembayaran kurang.");
+      return;
+    }
+
+    try {
+      const payload = {
+        cabang_id: 1,
+        kasir_id: 1,
+        member_id: selectedMember?.id || null,
+        total: total,
+        metode_bayar: metodeBayar,
+        bayar: bayarNum,
+        items: keranjang.map((item) => ({
+          produk_id: item.id,
+          qty: item.qty,
+          harga: Number(item.harga_eceran),
+        })),
+      };
+
+      const res = await api.post("/transaksi", payload);
+      const kodeTransaksi = res.data?.kode_transaksi || generateTrxCode();
+      const tanggal = res.data?.tanggal || new Date().toISOString();
+
+      setTrxCode(kodeTransaksi);
+      setLastTransaction({
+        kode_transaksi: kodeTransaksi,
+        tanggal,
+        total,
+        bayar: bayarNum,
+        kembali,
+        items: keranjang.map((item) => ({
+          ...item,
+          harga: Number(item.harga_eceran),
+          subtotal: Number(item.harga_eceran) * item.qty,
+        })),
+      });
+
+      alert("Transaksi berhasil");
+      setKeranjang([]);
+      setBayar("");
+      getProduk();
+    } catch (error) {
+      alert(error.response?.data?.message || "Transaksi gagal");
+    }
+  };
 
   return (
     <div className="kasir-wrap">
@@ -98,15 +263,15 @@ function Kasir() {
             <div key={p.id} className="kasir-prod-card" onClick={() => addToCart(p)}>
               <div className="kasir-prod-badge">{p.stok} Tersedia</div>
               <div className="kasir-prod-img">
-                <img src={akiImg} alt={p.nama} />
+                <img src={akiImg} alt={p.nama_produk} />
               </div>
-              <div className="kasir-prod-name">{p.nama}</div>
-              <div className="kasir-prod-sub">{p.sub}</div>
+              <div className="kasir-prod-name">{p.nama_produk}</div>
+              <div className="kasir-prod-sub">{categoryLabelMap[p.kategori_id]}</div>
               <div className="kasir-prod-harga">
                 <span className="kasir-tag eceran">Eceran</span>
-                <span className="kasir-price-eceran">{fmt(p.eceran)}</span>
+                <span className="kasir-price-eceran">{fmt(Number(p.harga_eceran))}</span>
                 <span className="kasir-tag grosir">Grosir</span>
-                <span className="kasir-price-grosir">{fmt(p.grosir)}</span>
+                <span className="kasir-price-grosir">{fmt(Number(p.harga_grosir))}</span>
               </div>
             </div>
           ))}
@@ -119,7 +284,7 @@ function Kasir() {
         {/* Header */}
         <div className="kasir-right-header">
           <span className="kasir-right-title">Transaksi Detail</span>
-          <span className="kasir-trx-no">#TRX-001</span>
+          <span className="kasir-trx-no">{trxCode}</span>
         </div>
 
         {/* Pelanggan */}
@@ -128,8 +293,22 @@ function Kasir() {
             <User size={14} color="#aaa" />
           </div>
           <div className="kasir-pelanggan-info">
-            <div className="kasir-pelanggan-name">Pelanggan Umum</div>
-            <div className="kasir-pelanggan-sub">Harga Eceran Normal</div>
+            <div className="kasir-pelanggan-name">{selectedMember?.nama || "Pelanggan Umum"}</div>
+            <div className="kasir-pelanggan-sub">
+              {selectedMember ? `${selectedMember.level || ""} Member` : "Harga Eceran Normal"}
+            </div>
+            <select
+              className="kasir-member-select"
+              value={selectedMember?.id || ""}
+              onChange={handleMemberSelect}
+            >
+              <option value="">Pelanggan Umum</option>
+              {members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.nama} {member.level ? `(${member.level})` : ""}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="kasir-pelanggan-radio" />
         </div>
@@ -151,13 +330,13 @@ function Kasir() {
           {keranjang.map(k => (
             <div className="kasir-keranjang-item" key={k.id}>
               <div className="kasir-item-img">
-                <img src={akiImg} alt={k.nama} />
+                <img src={akiImg} alt={k.nama_produk} />
               </div>
               <div className="kasir-item-body">
-                <div className="kasir-item-name">{k.nama}</div>
-                <div className="kasir-item-sub">{k.sub}</div>
+                <div className="kasir-item-name">{k.nama_produk}</div>
+                <div className="kasir-item-sub">{categoryLabelMap[k.kategori_id]}</div>
                 <div className="kasir-item-row">
-                  <span className="kasir-item-price">{k.qty} × {fmt(k.eceran)}</span>
+                  <span className="kasir-item-price">{k.qty} × {fmt(Number(k.harga_eceran))}</span>
                   <div className="kasir-item-qty">
                     <button className="kasir-qty-btn minus" onClick={() => changeQty(k.id, -1)}><Minus size={10} /></button>
                     <span>{k.qty}</span>
@@ -206,7 +385,12 @@ function Kasir() {
             <div className="kasir-rincian-row"><span>Kembali</span><span>{kembali >= 0 ? fmt(kembali) : "-"}</span></div>
           </div>
 
-          <button className="kasir-proses-btn">Proses Transaksi!</button>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <button className="kasir-proses-btn" onClick={prosesTransaksi}>Proses Transaksi!</button>
+            <button className="kasir-proses-btn" type="button" onClick={printReceipt} disabled={!lastTransaction}>
+              Cetak Struk
+            </button>
+          </div>
         </div>
       </div>
     </div>
