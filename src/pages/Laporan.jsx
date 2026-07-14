@@ -11,7 +11,12 @@ const BULAN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov"
 
 function Laporan() {
   const [transaksi, setTransaksi] = useState([]);
+  const [produkList, setProdukList] = useState([]);
   const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [branch, setBranch] = useState("all");
+  const [periodFilter, setPeriodFilter] = useState("daily"); // daily | weekly | monthly | yearly
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [chartTab, setChartTab] = useState("omset"); // omset | transaksi | item
@@ -19,27 +24,119 @@ function Laporan() {
   const pageSize = 7;
 
   useEffect(() => {
-    getTransaksiHistory();
+    const fetchData = async () => {
+      try {
+        const [produkRes, transaksiRes] = await Promise.all([
+          api.get("/produk"),
+          api.get("/transaksi/histori"),
+        ]);
+        setProdukList(produkRes.data || []);
+        setTransaksi(transaksiRes.data || []);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const getTransaksiHistory = async () => {
-    try {
-      const res = await api.get("/transaksi/histori");
-      setTransaksi(res.data || []);
-    } catch (err) {
-      console.log(err);
-    }
+  const getDetail = (trx) => trx?.detail_transaksi || trx?.items || [];
+
+  const categoryLabelMap = {
+    1: "Aki Kering",
+    2: "Aki Basah",
+    3: "Aki Motor",
+    4: "Kabel Aksesoris",
   };
 
-  const getDetail = (trx) => trx.detail_transaksi || trx.items || [];
+  const getCategoryLabel = (item = {}) => {
+    const rawValue =
+      item?.produk?.kategori ||
+      item?.kategori ||
+      item?.produk?.kategori_name ||
+      item?.kategori_name ||
+      item?.produk?.category ||
+      item?.category ||
+      item?.produk?.kategori_id ||
+      item?.kategori_id;
+
+    if (typeof rawValue === "string" && rawValue.trim()) {
+      return categoryLabelMap[Number(rawValue)] ?? rawValue;
+    }
+
+    const id = Number(item?.produk?.kategori_id ?? item?.kategori_id ?? item?.produk?.kategori ?? item?.kategori ?? 0);
+    return categoryLabelMap[id] || "Lainnya";
+  };
+
+  const getProdukInfo = (item = {}) => {
+    const productId = item?.produk_id ?? item?.produk?.id ?? item?.id_produk ?? item?.product_id;
+    const matchedProduct =
+      (productId && produkList.find((p) => Number(p.id) === Number(productId))) ||
+      (item?.produk?.id && produkList.find((p) => Number(p.id) === Number(item.produk.id))) ||
+      null;
+
+    const nama =
+      matchedProduct?.nama_produk ||
+      item?.produk?.nama_produk ||
+      item?.nama_produk ||
+      item?.nama ||
+      item?.produk?.name ||
+      item?.name ||
+      "-";
+
+    const kategori =
+      matchedProduct?.kategori_name ||
+      matchedProduct?.kategori ||
+      item?.produk?.kategori ||
+      item?.kategori ||
+      getCategoryLabel(item);
+
+    const harga = Number(
+      item?.harga ??
+        item?.harga_eceran ??
+        matchedProduct?.harga_eceran ??
+        item?.produk?.harga_eceran ??
+        0
+    );
+
+    const hargaGrosir = Number(
+      matchedProduct?.harga_grosir ??
+        item?.harga_grosir ??
+        item?.produk?.harga_grosir ??
+        0
+    );
+
+    const kode = matchedProduct?.kode_produk || item?.produk?.kode_produk || item?.kode_produk || "";
+
+    return { nama, kategori, harga, hargaGrosir, kode, matchedProduct };
+  };
 
   const filteredTransaksi = transaksi.filter((t) => {
     const keyword = search.toLowerCase();
-    return (
-      (t.kode_transaksi || "").toLowerCase().includes(keyword) ||
-      (t.kasir?.nama || t.nama_kasir || "").toLowerCase().includes(keyword) ||
-      (t.tipe_harga || t.metode_bayar || "").toLowerCase().includes(keyword)
-    );
+    const detail = getDetail(t);
+    const productNames = detail.map((item) => getProdukInfo(item).nama).join(" ").toLowerCase();
+    // basic keyword match
+    const matchesKeyword = (
+      (t.kode_transaksi || "") + " " +
+      (t.kasir?.nama || t.nama_kasir || "") + " " +
+      (t.tipe_harga || t.metode_bayar || "") + " " +
+      productNames
+    ).toLowerCase().includes(keyword);
+
+    // date range filter
+    const raw = t.tanggal || t.created_at || t.updated_at;
+    let matchesDate = true;
+    if (raw && (dateFrom || dateTo)) {
+      const d = new Date(raw);
+      if (dateFrom) matchesDate = matchesDate && d >= new Date(dateFrom + "T00:00:00");
+      if (dateTo) matchesDate = matchesDate && d <= new Date(dateTo + "T23:59:59");
+    }
+
+    // branch filter
+    const branchName = (t.cabang?.nama || t.cabang || t.cabang_name || t.branch || t.branch_name || "").toString();
+    const matchesBranch = branch === "all" ? true : branchName === branch;
+
+    return matchesKeyword && matchesDate && matchesBranch;
   });
 
   // Reset ke halaman 1 setiap kali pencarian berubah
@@ -82,18 +179,195 @@ function Laporan() {
   /* ── Data Chart: group by tanggal ── */
   const chartData = useMemo(() => {
     const map = {};
+    // group by periodFilter (daily, weekly, monthly, yearly)
+    const getKey = (d) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      if (periodFilter === "monthly") return `${yyyy}-${mm}`;
+      if (periodFilter === "yearly") return `${yyyy}`;
+      if (periodFilter === "weekly") {
+        // approximate week label by the Monday of that week
+        const tmp = new Date(d.valueOf());
+        const day = (d.getDay() + 6) % 7; // Mon=0
+        tmp.setDate(d.getDate() - day);
+        return tmp.toISOString().slice(0, 10);
+      }
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
     transaksi.forEach((trx) => {
       const raw = trx.tanggal || trx.created_at || trx.updated_at;
       if (!raw) return;
       const d = new Date(raw);
-      const key = d.toISOString().slice(0, 10);
-      if (!map[key]) map[key] = { date: d, omset: 0, transaksi: 0, item: 0 };
+      const key = getKey(d);
+      if (!map[key]) map[key] = { date: d, omset: 0, transaksi: 0, item: 0, label: key };
       map[key].omset += Number(trx.total || 0);
       map[key].transaksi += 1;
       map[key].item += getDetail(trx).reduce((s, it) => s + Number(it.qty || 0), 0);
     });
     return Object.values(map).sort((a, b) => a.date - b.date);
+  }, [transaksi, periodFilter]);
+  
+  // compute branch options from transaksi
+  const branchOptions = useMemo(() => {
+    const set = new Set();
+    transaksi.forEach((t) => {
+      const name = (t.cabang?.nama || t.cabang || t.cabang_name || t.branch || t.branch_name || "").toString();
+      if (name) set.add(name);
+    });
+    return ["all", ...Array.from(set)];
   }, [transaksi]);
+
+  // Export CSV of filteredTransaksi (full filtered set, not paginated)
+  const exportCSV = () => {
+    const rows = [];
+    rows.push(["Kode","Tanggal","Kasir","Jumlah","Total","Tipe Harga"]); 
+    filteredTransaksi.forEach((t) => {
+      const detail = getDetail(t);
+      const jumlah = detail.reduce((s, it) => s + Number(it.qty || 0), 0);
+      rows.push([
+        t.kode_transaksi || t.kode || "",
+        formatDateTime(t.tanggal || t.created_at || t.updated_at),
+        t.kasir?.nama || t.nama_kasir || "",
+        jumlah,
+        Number(t.total || 0),
+        t.tipe_harga || t.metode_bayar || "",
+      ]);
+    });
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `laporan_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const buildPrintHTML = (title = "Laporan") => {
+    const rows = filteredTransaksi.map((t) => {
+      const detail = getDetail(t);
+      const jumlah = detail.reduce((s, it) => s + Number(it.qty || 0), 0);
+      return `
+        <tr>
+          <td>${t.kode_transaksi || t.kode || ""}</td>
+          <td>${formatDateTime(t.tanggal || t.created_at || t.updated_at)}</td>
+          <td>${t.kasir?.nama || t.nama_kasir || ""}</td>
+          <td>${jumlah}</td>
+          <td>${fmt(Number(t.total || 0))}</td>
+        </tr>`;
+    }).join("");
+
+    return `
+      <html>
+      <head>
+        <title>${title}</title>
+        <style>
+          body{font-family: Arial, Helvetica, sans-serif; padding:20px; color:#111}
+          h1{font-size:18px}
+          table{width:100%; border-collapse:collapse; margin-top:12px}
+          th,td{border:1px solid #ddd; padding:8px; text-align:left}
+          th{background:#f5f5f5}
+        </style>
+      </head>
+      <body onload="window.focus(); window.print();">
+        <h1>${title}</h1>
+        <table>
+          <thead>
+            <tr><th>Kode</th><th>Tanggal</th><th>Kasir</th><th>Jumlah</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </body>
+      </html>`;
+  };
+
+  const printData = () => {
+  const html = buildPrintHTML("Laporan - Cetak");
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, "_blank", "noopener,noreferrer,width=900,height=700");
+  if (!w) {
+    alert("Popup diblokir browser. Izinkan popup untuk situs ini lalu coba lagi.");
+    return;
+  }
+  // bersihin url setelah window kebuka & selesai print
+  w.addEventListener("load", () => {
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+};
+  const exportPDF = () => {
+    // generate PDF using pdf-lib loaded from CDN and download directly
+    const loadPdfLib = () =>
+      new Promise((resolve, reject) => {
+        if (window.PDFLib) return resolve(window.PDFLib);
+        const s = document.createElement("script");
+        s.src = "https://unpkg.com/pdf-lib/dist/pdf-lib.min.js";
+        s.async = true;
+        s.onload = () => (window.PDFLib ? resolve(window.PDFLib) : reject(new Error("pdf-lib failed to load")));
+        s.onerror = (e) => reject(e);
+        document.head.appendChild(s);
+      });
+
+    (async () => {
+      try {
+        const PDFLib = await loadPdfLib();
+        const { PDFDocument, StandardFonts } = PDFLib;
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const pageSize = [595.28, 841.89]; // A4
+
+        const rows = filteredTransaksi.map((t) => {
+          const detail = getDetail(t);
+          const jumlah = detail.reduce((s, it) => s + Number(it.qty || 0), 0);
+          return [t.kode_transaksi || t.kode || "", formatDateTime(t.tanggal || t.created_at || t.updated_at), t.kasir?.nama || t.nama_kasir || "", String(jumlah), fmt(Number(t.total || 0))];
+        });
+
+        const perPage = 40;
+        const totalPagesPdf = Math.max(1, Math.ceil(rows.length / perPage));
+        for (let p = 0; p < totalPagesPdf; p++) {
+          const page = pdfDoc.addPage(pageSize);
+          const { width, height } = page.getSize();
+          let y = height - 50;
+          page.drawText("Laporan", { x: 50, y, size: 16, font });
+          y -= 22;
+          // header
+          const header = ["Kode", "Tanggal", "Kasir", "Jumlah", "Total"];
+          const xs = [50, 160, 300, 430, 490];
+          header.forEach((h, i) => page.drawText(h, { x: xs[i], y, size: 10, font }));
+          y -= 14;
+          const start = p * perPage;
+          const end = Math.min(rows.length, start + perPage);
+          for (let i = start; i < end; i++) {
+            const r = rows[i];
+            page.drawText(r[0], { x: xs[0], y, size: 10, font });
+            page.drawText(r[1], { x: xs[1], y, size: 10, font });
+            page.drawText(r[2], { x: xs[2], y, size: 10, font });
+            page.drawText(r[3], { x: xs[3], y, size: 10, font });
+            page.drawText(r[4], { x: xs[4], y, size: 10, font });
+            y -= 14;
+            if (y < 40) break;
+          }
+        }
+
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `laporan_${new Date().toISOString().slice(0,10)}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("Export PDF failed", err);
+        // fallback to print dialog
+        printData();
+      }
+    })();
+  };
 
   const chartValues = chartData.map((d) => d[chartTab]);
   const maxVal = Math.max(1, ...chartValues);
@@ -141,13 +415,24 @@ function Laporan() {
     return nums;
   }, [page, totalPages]);
 
+  const resetFilters = () => {
+    setDateFrom("");
+    setDateTo("");
+    setBranch("all");
+    setPeriodFilter("daily");
+    setSearch("");
+    setPage(1);
+    setChartTab("omset");
+  };
+
   /* ── Produk Terlaris ── */
   const produkTerlaris = useMemo(() => {
     const map = {};
     transaksi.forEach((trx) => {
       getDetail(trx).forEach((item) => {
-        const nama = item.produk?.nama_produk || item.nama_produk || item.nama || "-";
-        const kategori = item.produk?.kategori || item.kategori || "";
+        const itemInfo = getProdukInfo(item);
+        const nama = itemInfo.nama;
+        const kategori = itemInfo.kategori;
         const qty = Number(item.qty || 0);
         if (!map[nama]) map[nama] = { nama, kategori, qty: 0 };
         map[nama].qty += qty;
@@ -156,20 +441,20 @@ function Laporan() {
     const list = Object.values(map).sort((a, b) => b.qty - a.qty).slice(0, 5);
     const maxQty = Math.max(1, ...list.map((p) => p.qty));
     return list.map((p) => ({ ...p, percent: Math.round((p.qty / maxQty) * 100) }));
-  }, [transaksi]);
+  }, [transaksi, produkList]);
 
   return (
     <div className="lap-wrap">
       <div className="lap-header">
         <h2 className="lap-title">Laporan</h2>
         <div className="lap-header-btns">
-          <button className="lap-btn-outline" onClick={() => window.print()}>
+          <button className="lap-btn-outline" onClick={printData}>
             <Printer size={14} /> Print
           </button>
-          <button className="lap-btn-outline">
+          <button className="lap-btn-outline" onClick={exportCSV}>
             <FileSpreadsheet size={14} /> Excel
           </button>
-          <button className="lap-btn-export">
+          <button className="lap-btn-export" onClick={exportPDF}>
             <FileText size={14} /> Export PDF
           </button>
         </div>
@@ -177,18 +462,22 @@ function Laporan() {
 
       <div className="lap-filterbar">
         <span className="lap-flabel">Dari</span>
-        <input className="lap-dateinput" type="date" defaultValue="2026-05-01" />
+        <input className="lap-dateinput" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
         <span className="lap-flabel">s/d</span>
-        <input className="lap-dateinput" type="date" defaultValue="2026-05-15" />
+        <input className="lap-dateinput" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         <span className="lap-flabel">Cabang</span>
-        <div className="lap-select">Semua Cabang <ChevronDown size={13} /></div>
+        <select className="lap-select" value={branch} onChange={(e) => setBranch(e.target.value)}>
+          {branchOptions.map((b, i) => (
+            <option key={i} value={b}>{b === "all" ? "Semua Cabang" : b}</option>
+          ))}
+        </select>
         <div className="lap-period">
-          <button className="lap-periodb active">Harian</button>
-          <button className="lap-periodb">Mingguan</button>
-          <button className="lap-periodb">Bulanan</button>
-          <button className="lap-periodb">Tahunan</button>
+          <button type="button" className={`lap-periodb ${periodFilter === "daily" ? "active" : ""}`} onClick={() => setPeriodFilter("daily")}>Harian</button>
+          <button type="button" className={`lap-periodb ${periodFilter === "weekly" ? "active" : ""}`} onClick={() => setPeriodFilter("weekly")}>Mingguan</button>
+          <button type="button" className={`lap-periodb ${periodFilter === "monthly" ? "active" : ""}`} onClick={() => setPeriodFilter("monthly")}>Bulanan</button>
+          <button type="button" className={`lap-periodb ${periodFilter === "yearly" ? "active" : ""}`} onClick={() => setPeriodFilter("yearly")}>Tahunan</button>
         </div>
-        <button className="lap-resetbtn"><RefreshCw size={13} /> Reset</button>
+        <button type="button" className="lap-resetbtn" onClick={resetFilters}><RefreshCw size={13} /> Reset</button>
       </div>
 
       <div className="lap-stats">
@@ -292,13 +581,14 @@ function Laporan() {
             {pagedTransaksi.map((trx, index) => {
               const detail = getDetail(trx);
               const jumlah = detail.reduce((s, it) => s + Number(it.qty || 0), 0);
+              const firstItemInfo = detail.length > 0 ? getProdukInfo(detail[0]) : { harga: 0 };
               return (
                 <tr key={trx.id || index} onClick={() => openDetail(trx)} style={{ cursor: "pointer" }}>
                   <td className="td-gray">{trx.kode_transaksi || trx.kode}</td>
                   <td>{formatWaktu(trx.tanggal || trx.created_at || trx.updated_at)}</td>
                   <td>{trx.kasir?.nama || trx.nama_kasir || "-"}</td>
                   <td>{jumlah}</td>
-                  <td>{trx.tipe_harga || trx.metode_bayar || "-"}</td>
+                  <td>{detail.length > 0 ? fmt(firstItemInfo.harga) : "-"}</td>
                   <td className="td-bold">{fmt(Number(trx.total || 0))}</td>
                 </tr>
               );
@@ -375,12 +665,12 @@ function Laporan() {
             </thead>
             <tbody>
               {detailItems.map((item, idx) => {
-                const name = item.produk?.nama_produk || item.nama_produk || item.nama || "-";
-                const harga = Number(item.harga || item.harga_eceran || 0);
+                const itemInfo = getProdukInfo(item);
+                const harga = Number(itemInfo.harga);
                 const subtotalItem = Number(item.subtotal ?? ((item.qty || 0) * harga) ?? 0);
                 return (
                   <tr key={idx}>
-                    <td>{name}</td>
+                    <td>{itemInfo.nama}</td>
                     <td>{item.qty || 0}</td>
                     <td>{fmt(harga)}</td>
                     <td className="td-bold">{fmt(subtotalItem)}</td>

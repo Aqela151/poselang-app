@@ -30,17 +30,24 @@ function StokBarang() {
   const [sortOrder, setSortOrder] = useState("newest");
 
   useEffect(() => {
-  getProduk();
-}, []);
+    getProduk();
+  }, []);
 
-const getProduk = async () => {
-  try {
-    const res = await api.get("/produk");
-    setProducts(res.data);
-  } catch (err) {
-    console.log(err);
-  }
-};
+  const getProduk = async () => {
+    try {
+      const res = await api.get("/produk");
+      const data = res?.data;
+      const normalized = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+          ? data.data
+          : [];
+      setProducts(normalized);
+    } catch (err) {
+      console.log(err);
+      setProducts([]);
+    }
+  };
 
   const handleView = (barang) => {
     setSelectedBarang(barang);
@@ -58,14 +65,14 @@ const getProduk = async () => {
   };
 
   const handleSaveEdit = (updated) => {
-  setProducts((prev) =>
-    prev.map((p) => (p.id === updated.id ? updated : p))
-  );
-};
+    setProducts((prev) =>
+      prev.map((p) => (Number(p.id) === Number(updated.id) ? updated : p))
+    );
+  };
 
   const handleConfirmDelete = (target) => {
-  setProducts((prev) => prev.filter((p) => p.id !== target.id));
-};
+    setProducts((prev) => prev.filter((p) => Number(p.id) !== Number(target.id)));
+  };
 
   const getStatusKey = (stok) => {
     if (Number(stok) === 0) return "habis";
@@ -85,9 +92,23 @@ const getProduk = async () => {
     return categoryLabelMap[id] || "Lainnya";
   };
 
-  const categoryOptions = Array.from(new Set(products.map((product) => getCategoryLabel(product))));
+  // Ambil URL gambar produk — prioritas ke gambar_url yang sudah lengkap dari Laravel
+  const getProductImage = (product) => {
+    if (product.gambar_url) return product.gambar_url;
 
-  const filteredProducts = products.filter((product) => {
+    const raw = product.gambar || product.foto || product.image || "";
+    if (!raw) return null;
+
+    if (raw.startsWith("http") || raw.startsWith("blob:") || raw.startsWith("data:")) return raw;
+
+    const baseUrl = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+    return `${baseUrl}/uploads/${raw}`;
+  };
+
+  const safeProducts = Array.isArray(products) ? products : [];
+  const categoryOptions = Array.from(new Set(safeProducts.map((product) => getCategoryLabel(product))));
+
+  const filteredProducts = safeProducts.filter((product) => {
     const query = searchTerm.toLowerCase();
     const searchableText = `${product.nama_produk || ""} ${product.kode_produk || ""} ${getCategoryLabel(product)}`.toLowerCase();
     const matchesSearch = searchableText.includes(query);
@@ -105,14 +126,14 @@ const getProduk = async () => {
     return sortOrder === "newest" ? idB - idA : idA - idB;
   });
 
-  const totalStok = products.reduce((sum, p) => sum + Number(p.stok || 0), 0);
-  const stokMenipis = products.filter((p) => Number(p.stok) > 0 && Number(p.stok) < 10).length;
-  const stokHabis = products.filter((p) => Number(p.stok) === 0).length;
+  const totalStok = safeProducts.reduce((sum, p) => sum + Number(p.stok || 0), 0);
+  const stokMenipis = safeProducts.filter((p) => Number(p.stok) > 0 && Number(p.stok) < 10).length;
+  const stokHabis = safeProducts.filter((p) => Number(p.stok) === 0).length;
 
   return (
     <div className="stok-container">
       <div className="stats-cards">
-        <Card title="Total Produk" value={products.length} description="Di semua kategori" />
+        <Card title="Total Produk" value={safeProducts.length} description="Di semua kategori" />
         <Card title="Stok Produk" value={totalStok.toLocaleString("id-ID")} description="Total keseluruhan" />
         <Card title="Stok Menipis" value={stokMenipis} description="Perlu restock segera" />
         <Card title="Stok Habis" value={stokHabis} description="Tidak tersedia" />
@@ -171,23 +192,43 @@ const getProduk = async () => {
             {sortedProducts.map((p) => (
               <tr key={p.id}>
                 <td>
-  <div className="prod-name">{p.nama_produk}</div>
-  <div className="prod-sub">{p.kode_produk}</div>
-</td>
+                  <div className="prod-info">
+                    {getProductImage(p) ? (
+                      <img
+                        src={getProductImage(p)}
+                        alt={p.nama_produk}
+                        className="prod-img"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.nextSibling.style.display = "flex";
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="prod-img prod-img-fallback"
+                      style={{ display: getProductImage(p) ? "none" : "flex" }}
+                    >
+                      🔋
+                    </div>
+                    <div>
+                      <div className="prod-name">{p.nama_produk}</div>
+                      <div className="prod-sub">{p.kode_produk}</div>
+                    </div>
+                  </div>
+                </td>
                 <td>{p.kode_produk}</td>
-<td>{getCategoryLabel(p)}</td>
-<td>Rp {Number(p.harga_eceran).toLocaleString("id-ID")}</td>
-<td>Rp {Number(p.harga_grosir).toLocaleString("id-ID")}</td>
-<td>{p.stok}</td>
+                <td>{getCategoryLabel(p)}</td>
+                <td>Rp {Number(p.harga_eceran).toLocaleString("id-ID")}</td>
+                <td>Rp {Number(p.harga_grosir).toLocaleString("id-ID")}</td>
+                <td>{p.stok}</td>
                 <td>
-  {getStatusKey(p.stok) === "habis" ? (
-    <span className="status habis">{statusLabel.habis}</span>
-  ) : getStatusKey(p.stok) === "menipis" ? (
-    <span className="status menipis">{statusLabel.menipis}</span>
-  ) : (
-    <span className="status aman">{statusLabel.aman}</span>
-  )}
-
+                  {getStatusKey(p.stok) === "habis" ? (
+                    <span className="status habis">{statusLabel.habis}</span>
+                  ) : getStatusKey(p.stok) === "menipis" ? (
+                    <span className="status menipis">{statusLabel.menipis}</span>
+                  ) : (
+                    <span className="status aman">{statusLabel.aman}</span>
+                  )}
                 </td>
                 <td>
                   <div className="aksi-btns">
@@ -202,7 +243,7 @@ const getProduk = async () => {
         </table>
 
         <div className="pagination">
-          <span className="pag-info">Menampilkan {sortedProducts.length} dari {products.length} produk</span>
+          <span className="pag-info">Menampilkan {sortedProducts.length} dari {safeProducts.length} produk</span>
           <div className="pag-pages">
             <button className="pag-btn arrow">‹</button>
             <button className="pag-btn active">1</button>
@@ -215,12 +256,17 @@ const getProduk = async () => {
         </div>
       </div>
 
-      <TambahBarangModal isOpen={tambahOpen} onClose={() => setTambahOpen(false)} />
+      <TambahBarangModal
+        isOpen={tambahOpen}
+        onClose={() => setTambahOpen(false)}
+        onSuccess={getProduk}
+      />
       <EditBarangModal
         isOpen={editOpen}
         onClose={() => setEditOpen(false)}
         barang={selectedBarang}
         onSave={handleSaveEdit}
+        onSuccess={getProduk}
       />
       <DeleteBarangModal
         isOpen={deleteOpen}

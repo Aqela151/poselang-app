@@ -8,14 +8,16 @@ export default function TambahMemberModal({
   onClose,
   onSuccess,
 }) {
-  const [form, setForm] = useState({
+  const initialForm = {
     nama: "",
     no_hp: "",
     email: "",
     alamat: "",
     level: "silver",
     total_transaksi: 0,
-  });
+  };
+
+  const [form, setForm] = useState(initialForm);
 
   const handleChange = (e) => {
     setForm({
@@ -24,14 +26,18 @@ export default function TambahMemberModal({
     });
   };
 
+  const resetForm = () => {
+    setForm(initialForm);
+  };
+
   const handleSubmit = async () => {
     try {
       await api.post("/member", form);
 
-alert("Member berhasil ditambahkan");
-
-onSuccess(); // ambil ulang data member
-onClose();
+      alert("Member berhasil ditambahkan");
+      onSuccess(); // ambil ulang data member
+      resetForm();
+      onClose();
     } catch (err) {
       console.error(err);
       alert("Gagal menambahkan member");
@@ -39,7 +45,7 @@ onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Tambah Member Baru">
+    <Modal isOpen={isOpen} onClose={() => { resetForm(); onClose(); }} title="Tambah Member Baru">
       <div className="modal-form-grid">
 
         <div className="modal-form-group">

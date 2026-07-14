@@ -3,19 +3,35 @@ import Modal from "../Modal/Modal";
 import { Check, CloudUpload } from "lucide-react";
 import api from "../../services/api";
 
-export default function EditBarangModal({ isOpen, onClose, barang, onSave }) {
+export default function EditBarangModal({ isOpen, onClose, barang, onSave, onSuccess }) {
+  const [imageFile, setImageFile] = useState(null);
   const [form, setForm] = useState({
-  nama_produk: "",
-  kode_produk: "",
-  kategori_id: "",
-  supplier_id: "",
-  harga_beli: "",
-  harga_eceran: "",
-  harga_grosir: "",
-  stok: "",
-});
+    nama_produk: "",
+    kode_produk: "",
+    kategori_id: "",
+    supplier_id: "",
+    harga_beli: "",
+    harga_eceran: "",
+    harga_grosir: "",
+    stok: "",
+    status: "",
+    sub: "",
+  });
   const [preview, setPreview] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef(null);
+
+  const getProductImageUrl = (product) => {
+    if (!product) return null;
+    if (product.gambar_url) return product.gambar_url;
+    const raw = product.gambar || product.foto || product.image || "";
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw) || raw.startsWith("blob:") || raw.startsWith("data:")) {
+      return raw;
+    }
+    const baseUrl = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+    return `${baseUrl}/uploads/${raw}`;
+  };
 
   useEffect(() => {
     if (barang) {
@@ -29,8 +45,9 @@ export default function EditBarangModal({ isOpen, onClose, barang, onSave }) {
         harga_grosir: barang.harga_grosir || "",
         stok: barang.stok ?? "",
         status: barang.status || "",
+        sub: barang.sub || "",
       });
-      setPreview(null);
+      setPreview(getProductImageUrl(barang));
     }
   }, [barang]);
 
@@ -40,32 +57,64 @@ export default function EditBarangModal({ isOpen, onClose, barang, onSave }) {
 
   const handleUpload = (e) => {
     const file = e.target.files[0];
-    if (file) setPreview(URL.createObjectURL(file));
+    if (file) {
+      setImageFile(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const appendImageToFormData = (formData, file) => {
+    if (!file) return;
+    ["gambar", "foto", "foto_produk", "image", "file", "photo"].forEach((fieldName) => {
+      formData.append(fieldName, file, file.name);
+    });
   };
 
   const handleSave = async () => {
-  try {
-    const res = await api.put(`/produk/${barang.id}`, {
-      ...form,
-      stok: Number(form.stok),
-    });
+    if (submitting) return;
+    setSubmitting(true);
 
-    console.log(res.data);
+    try {
+      const formData = new FormData();
 
-    alert("Produk berhasil diupdate");
+      Object.entries(form).forEach(([key, value]) => {
+        formData.append(key, value ?? "");
+      });
 
-    onSave({
-      ...barang,
-      ...form,
-      stok: Number(form.stok),
-    });
+      if (imageFile) {
+        appendImageToFormData(formData, imageFile);
+      }
 
-    onClose();
-  } catch (err) {
-    console.log(err.response);
-    alert("Gagal update produk");
-  }
-};
+      // Laravel file upload with method override is safer via POST + _method=PUT
+      formData.append("_method", "PUT");
+
+      const res = await api.post(`/produk/${barang.id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      console.log("[EditBarangModal] update response:", res.data);
+      alert("Produk berhasil diupdate");
+
+      const updatedItem = res.data?.data || res.data || {
+        ...barang,
+        ...form,
+        stok: Number(form.stok),
+      };
+
+      onSave(updatedItem);
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      console.error("Gagal update produk:", err);
+      if (err.response?.data?.message) {
+        alert(err.response.data.message);
+      } else {
+        alert("Gagal update produk");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Barang">
@@ -121,9 +170,9 @@ export default function EditBarangModal({ isOpen, onClose, barang, onSave }) {
           <textarea className="modal-textarea" name="sub" value={form.sub} onChange={handleChange} placeholder="Deskripsi singkat produk..." />
         </div>
         <div className="modal-footer">
-          <button className="modal-btn-cancel" onClick={onClose}>Batal</button>
-          <button className="modal-btn-save" onClick={handleSave}>
-            <Check size={14} />Simpan Perubahan
+          <button type="button" className="modal-btn-cancel" onClick={onClose}>Batal</button>
+          <button type="button" className="modal-btn-save" onClick={handleSave} disabled={submitting}>
+            <Check size={14} />{submitting ? "Menyimpan..." : "Simpan Perubahan"}
           </button>
         </div>
       </div>

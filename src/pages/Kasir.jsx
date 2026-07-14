@@ -11,12 +11,80 @@ const categoryLabelMap = {
   2: "Aki Basah",
   3: "Aki Motor",
   4: "Kabel Aksesoris",
+  5: "Jasa",
+  6: "Jasa",
 };
 
 const generateTrxCode = () => {
   const now = new Date();
   const pad = (value) => String(value).padStart(2, "0");
   return `TRX-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+};
+
+const getProductImageCandidates = (p) => {
+  const extractStrings = (val) => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val.flatMap(v => extractStrings(v));
+    if (typeof val === 'object') {
+      return [val.url, val.path, val.src, val.file, val.filename, val.file_name].filter(Boolean);
+    }
+    if (typeof val === 'string') return [val];
+    return [];
+  };
+
+  const candidatesRaw = [];
+  // common properties where backend might store image info
+  const props = ['gambar_url','gambar','image_url','image','foto','img','foto_produk','file','filename','foto_url'];
+  for (const prop of props) {
+    if (p?.[prop]) candidatesRaw.push(...extractStrings(p[prop]));
+  }
+
+  // also check nested 'produk' or first media array
+  if (p?.produk?.gambar) candidatesRaw.push(...extractStrings(p.produk.gambar));
+  if (p?.media) candidatesRaw.push(...extractStrings(p.media));
+
+  // fallback to any value that looks like a path in object
+  if (candidatesRaw.length === 0 && p) {
+    if (p?.path) candidatesRaw.push(p.path);
+  }
+
+  const normalized = candidatesRaw
+    .map(s => (typeof s === 'string' ? s.trim() : ''))
+    .filter(Boolean);
+
+  const base = (api.defaults.baseURL || '').replace(/\/?api\/?$/i, '').replace(/\/$/, '');
+  const prefixes = [
+    '',
+    base + '/storage/',
+    base + '/uploads/',
+    base + '/storage/app/public/',
+    base + '/',
+  ].filter(Boolean);
+
+  const urls = [];
+  for (const raw of normalized) {
+    if (raw.startsWith('http') || raw.startsWith('data:') || raw.startsWith('blob:')) {
+      urls.push(raw);
+      continue;
+    }
+    // if raw already contains storage/uploads or starts with slash, join with base
+    if (/^\/?(storage|uploads|images)\//i.test(raw)) {
+      urls.push(base + '/' + raw.replace(/^\//, ''));
+      continue;
+    }
+    for (const pref of prefixes) {
+      const candidate = pref.endsWith('/') ? pref + raw.replace(/^\//, '') : pref + '/' + raw.replace(/^\//, '');
+      urls.push(candidate.replace(/([^:]\/)\//g, '$1'));
+    }
+  }
+
+  // remove duplicates while preserving order
+  return Array.from(new Set(urls));
+};
+
+const getProductImage = (p) => {
+  const c = getProductImageCandidates(p);
+  return c.length ? c[0] : akiImg;
 };
 
 function Kasir() {
@@ -39,6 +107,7 @@ function Kasir() {
   const getProduk = async () => {
     try {
       const res = await api.get("/produk");
+      console.log("[Kasir] produk response:", res.data);
       setProdukList(res.data);
     } catch (err) {
       console.log(err);
@@ -54,15 +123,55 @@ function Kasir() {
     }
   };
 
-  const filtered = produkList.filter((p) =>
-    (p.nama_produk || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const getKasirCategoryLabel = (p) => {
+    return categoryLabelMap[p.kategori_id] || p.kategori_name || p.kategori || p.category_name || p.category || "Lainnya";
+  };
+
+  const isJasaItem = (p) => {
+    const raw = `${p.kategori_name || p.kategori || p.category_name || p.category || p.kategori_id || ""}`.toLowerCase();
+    if (raw.includes("jasa") || raw.includes("service") || raw.includes("servis")) return true;
+    const id = Number(p.kategori_id ?? p.kategori ?? 0);
+    return id > 4;
+  };
+
+  const isProdukItem = (p) => {
+    const id = Number(p.kategori_id ?? p.kategori ?? 0);
+    if (id >= 1 && id <= 4) return true;
+    return !isJasaItem(p);
+  };
+
+  const filtered = produkList.filter((p) => {
+    const matchesSearch = (p.nama_produk || "").toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = kategori === "Produk" ? isProdukItem(p) : isJasaItem(p);
+    return matchesSearch && matchesCategory;
+  });
 
   const addToCart = (produk) => {
     setKeranjang(prev => {
       const exist = prev.find(k => k.id === produk.id);
-      if (exist) return prev.map(k => k.id === produk.id ? { ...k, qty: k.qty + 1 } : k);
-      return [...prev, { ...produk, qty: 1 }];
+      const others = prev.filter(k => k.id !== produk.id);
+      const isHabis = Number(produk.stok) === 0;
+
+      const habisOthers = others.filter(k => Number(k.stok) === 0);
+      const nonHabisOthers = others.filter(k => Number(k.stok) !== 0);
+
+      if (exist) {
+        const updated = { ...exist, qty: exist.qty + 1 };
+        if (isHabis) {
+          // updated habis item goes to very top
+          return [updated, ...habisOthers, ...nonHabisOthers];
+        }
+        // non-habis item goes after any habis items
+        return [...habisOthers, updated, ...nonHabisOthers];
+      }
+
+      const newItem = { ...produk, qty: 1 };
+      if (isHabis) {
+        // new habis item at very top
+        return [newItem, ...habisOthers, ...nonHabisOthers];
+      }
+      // new non-habis item goes after existing habis items
+      return [...habisOthers, newItem, ...nonHabisOthers];
     });
   };
 
@@ -80,7 +189,7 @@ function Kasir() {
   const tax = Math.round(subtotal * 0.03);
   const total = subtotal + tax;
   const bayarNum = parseInt(bayar.replace(/\D/g, "")) || 0;
-  const kembali = bayarNum - total;
+  const kembali = Math.max(0, bayarNum - total);
 
   const hasCart = keranjang.length > 0;
 
@@ -90,11 +199,12 @@ function Kasir() {
     setSelectedMember(member);
   };
 
-  const printReceipt = () => {
-    if (!lastTransaction) return;
+  const printReceipt = (txParam) => {
+    const tx = txParam || lastTransaction;
+    if (!tx) return;
 
-    const date = new Date(lastTransaction.tanggal || new Date()).toLocaleString("id-ID");
-    const items = lastTransaction.items || [];
+    const date = new Date(tx.tanggal || new Date()).toLocaleString("id-ID");
+    const items = tx.items || [];
     const rows = items
       .map((item) => {
         const name = item.nama_produk || item.nama || item.produk?.nama_produk || "-";
@@ -114,7 +224,7 @@ function Kasir() {
     const html = `
       <html>
         <head>
-          <title>Struk ${lastTransaction.kode_transaksi || trxCode}</title>
+          <title>Struk ${tx.kode_transaksi || trxCode}</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 24px; color: #000; }
             h2 { margin-bottom: 8px; }
@@ -127,7 +237,7 @@ function Kasir() {
         </head>
         <body>
           <h2>Nama Toko</h2>
-          <div>Nomor: ${lastTransaction.kode_transaksi || trxCode}</div>
+          <div>Nomor: ${tx.kode_transaksi || trxCode}</div>
           <div>Tanggal: ${date}</div>
           <div>Member: ${selectedMember?.nama || "Umum"}</div>
           <div class="section">
@@ -146,9 +256,9 @@ function Kasir() {
             </table>
           </div>
           <div class="section">
-            <div>Total: Rp ${Number(lastTransaction.total).toLocaleString("id-ID")}</div>
-            <div>Bayar: Rp ${Number(lastTransaction.bayar).toLocaleString("id-ID")}</div>
-            <div>Kembali: Rp ${Number(lastTransaction.kembali).toLocaleString("id-ID")}</div>
+            <div>Total: Rp ${Number(tx.total).toLocaleString("id-ID")}</div>
+            <div>Bayar: Rp ${Number(tx.bayar).toLocaleString("id-ID")}</div>
+            <div>Kembali: Rp ${Number(tx.kembali).toLocaleString("id-ID")}</div>
           </div>
           <div>Terima kasih.</div>
         </body>
@@ -172,11 +282,6 @@ function Kasir() {
       return;
     }
 
-    if (bayarNum < total) {
-      alert("Uang pembayaran kurang.");
-      return;
-    }
-
     try {
       const payload = {
         cabang_id: 1,
@@ -197,7 +302,7 @@ function Kasir() {
       const tanggal = res.data?.tanggal || new Date().toISOString();
 
       setTrxCode(kodeTransaksi);
-      setLastTransaction({
+      const tx = {
         kode_transaksi: kodeTransaksi,
         tanggal,
         total,
@@ -208,14 +313,21 @@ function Kasir() {
           harga: Number(item.harga_eceran),
           subtotal: Number(item.harga_eceran) * item.qty,
         })),
-      });
+      };
+      setLastTransaction(tx);
+      printReceipt(tx);
 
       alert("Transaksi berhasil");
       setKeranjang([]);
       setBayar("");
       getProduk();
     } catch (error) {
-      alert(error.response?.data?.message || "Transaksi gagal");
+      const backendMessage = error.response?.data?.message;
+      if (backendMessage === "Uang pembayaran kurang.") {
+        alert("Transaksi gagal");
+      } else {
+        alert(backendMessage || "Transaksi gagal");
+      }
     }
   };
 
@@ -259,11 +371,37 @@ function Kasir() {
         </div>
 
         <div className="kasir-grid">
-          {filtered.map(p => (
+          {filtered.map(p => {
+            const candidates = getProductImageCandidates(p);
+            const imgSrc = candidates[0] || akiImg;
+            return (
             <div key={p.id} className="kasir-prod-card" onClick={() => addToCart(p)}>
               <div className="kasir-prod-badge">{p.stok} Tersedia</div>
               <div className="kasir-prod-img">
-                <img src={akiImg} alt={p.nama_produk} />
+                <img
+                  src={imgSrc}
+                  alt={p.nama_produk}
+                  data-candidates={JSON.stringify(candidates)}
+                  data-idx={0}
+                  onError={(e) => {
+                    try {
+                      const el = e.currentTarget;
+                      const list = JSON.parse(el.dataset.candidates || '[]');
+                      let idx = parseInt(el.dataset.idx || '0', 10) || 0;
+                      idx += 1;
+                      if (idx < list.length) {
+                        el.dataset.idx = idx;
+                        el.src = list[idx];
+                        return;
+                      }
+                    } catch (err) {
+                      // ignore
+                    }
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = akiImg;
+                  }}
+                  onLoad={() => console.log('[Kasir] image loaded', imgSrc)}
+                />
               </div>
               <div className="kasir-prod-name">{p.nama_produk}</div>
               <div className="kasir-prod-sub">{categoryLabelMap[p.kategori_id]}</div>
@@ -274,7 +412,8 @@ function Kasir() {
                 <span className="kasir-price-grosir">{fmt(Number(p.harga_grosir))}</span>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
 
@@ -327,10 +466,36 @@ function Kasir() {
           {!hasCart && (
             <div className="kasir-empty">Belum ada produk dipilih</div>
           )}
-          {keranjang.map(k => (
+          {keranjang.map(k => {
+            const candidatesK = getProductImageCandidates(k);
+            const kImg = candidatesK[0] || akiImg;
+            return (
             <div className="kasir-keranjang-item" key={k.id}>
               <div className="kasir-item-img">
-                <img src={akiImg} alt={k.nama_produk} />
+                <img
+                  src={kImg}
+                  alt={k.nama_produk}
+                  data-candidates={JSON.stringify(candidatesK)}
+                  data-idx={0}
+                  onError={(e) => {
+                    try {
+                      const el = e.currentTarget;
+                      const list = JSON.parse(el.dataset.candidates || '[]');
+                      let idx = parseInt(el.dataset.idx || '0', 10) || 0;
+                      idx += 1;
+                      if (idx < list.length) {
+                        el.dataset.idx = idx;
+                        el.src = list[idx];
+                        return;
+                      }
+                    } catch (err) {
+                      // ignore
+                    }
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = akiImg;
+                  }}
+                  onLoad={() => console.log('[Kasir] cart image loaded', kImg)}
+                />
               </div>
               <div className="kasir-item-body">
                 <div className="kasir-item-name">{k.nama_produk}</div>
@@ -345,7 +510,8 @@ function Kasir() {
                 </div>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
 
         {/* Bottom */}
@@ -385,12 +551,9 @@ function Kasir() {
             <div className="kasir-rincian-row"><span>Kembali</span><span>{kembali >= 0 ? fmt(kembali) : "-"}</span></div>
           </div>
 
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <button className="kasir-proses-btn" onClick={prosesTransaksi}>Proses Transaksi!</button>
-            <button className="kasir-proses-btn" type="button" onClick={printReceipt} disabled={!lastTransaction}>
-              Cetak Struk
-            </button>
-          </div>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <button className="kasir-proses-btn" onClick={prosesTransaksi}>Proses Transaksi!</button>
+            </div>
         </div>
       </div>
     </div>
