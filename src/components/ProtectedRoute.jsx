@@ -18,6 +18,7 @@ import { useAuth } from "../context/AuthContext";
  */
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user, isAuthenticated, loading } = useAuth();
+  const normalizedRole = user?.role?.toLowerCase();
 
   // Tunggu proses cek localStorage selesai dulu
   if (loading) {
@@ -29,8 +30,8 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   }
 
   // Jika role tidak diizinkan untuk halaman ini, lempar ke halaman sesuai rolenya
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const redirectPath = user.role === "admin" ? "/dashboard" : "/kasir";
+  if (allowedRoles && !allowedRoles.includes(normalizedRole)) {
+    const redirectPath = normalizedRole === "admin" ? "/dashboard" : "/kasir";
     return <Navigate to={redirectPath} replace />;
   }
 

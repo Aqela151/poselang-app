@@ -290,6 +290,7 @@ function Kasir() {
         total: total,
         metode_bayar: metodeBayar,
         bayar: bayarNum,
+        tanggal: new Date().toISOString(),
         items: keranjang.map((item) => ({
           produk_id: item.id,
           qty: item.qty,

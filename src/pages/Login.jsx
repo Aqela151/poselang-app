@@ -25,7 +25,6 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Menggunakan instance axios yang sudah ada di services/api.js
       const response = await api.post("/login", {
         email: form.email,
         password: form.password,
@@ -43,7 +42,8 @@ export default function Login() {
         }
 
         // Redirect berdasarkan role
-        if (data.user.role === "admin") {
+        const normalizedRole = data.user.role?.toLowerCase?.() || "";
+        if (normalizedRole === "admin") {
           navigate("/dashboard", { replace: true });
         } else {
           navigate("/kasir", { replace: true });

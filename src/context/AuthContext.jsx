@@ -14,7 +14,8 @@ export function AuthProvider({ children }) {
 
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setUser({ ...parsed, role: parsed.role?.toLowerCase() });
       } catch (error) {
         // Data corrupt, bersihkan
         localStorage.removeItem(USER_STORAGE_KEY);
@@ -26,14 +27,26 @@ export function AuthProvider({ children }) {
 
   // Dipanggil setelah login berhasil
   const login = (userData) => {
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
-    setUser(userData);
+    const normalizedUser = { ...userData, role: userData.role?.toLowerCase() };
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUser));
+    setUser(normalizedUser);
   };
 
   // Dipanggil saat logout
   const logout = () => {
     localStorage.removeItem(USER_STORAGE_KEY);
     setUser(null);
+  };
+
+  // Dipanggil setelah user mengedit profil (mis. di halaman Settings)
+  // supaya data user di seluruh app (avatar, nama, dsb) langsung ikut update
+  // tanpa perlu logout/login ulang. Menerima objek partial, digabung dengan user lama.
+  const updateUser = (partialData) => {
+    setUser((prev) => {
+      const updated = { ...prev, ...partialData };
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const value = {
@@ -44,6 +57,7 @@ export function AuthProvider({ children }) {
     loading,
     login,
     logout,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

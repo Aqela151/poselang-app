@@ -7,50 +7,21 @@ import {
   Bell,
 } from "lucide-react";
 
-const menuItems = [
-  {
-    id: "profil",
-    label: "Profil Toko",
-    icon: Store,
-  },
-  {
-    id: "pajak",
-    label: "Pajak",
-    icon: Percent,
-  },
-  {
-    id: "akun",
-    label: "Akun Saya",
-    icon: User,
-  },
-  {
-    id: "pengguna",
-    label: "Pengguna",
-    icon: Users,
-  },
-  {
-    id: "notifikasi",
-    label: "Notifikasi",
-    icon: Bell,
-  },
-];
-
 export default function SettingsNav({
   activeTab,
   setActiveTab,
+  tabs,
 }) {
   return (
     <div className="settings-nav">
-      {menuItems.map((item) => {
+      {tabs.map((item) => {
         const Icon = item.icon;
 
         return (
           <button
-            key={item.id}
-            className={`settings-nav-item ${
-              activeTab === item.id ? "active" : ""
-            }`}
-            onClick={() => setActiveTab(item.id)}
+            key={item.key}
+            className={`settings-nav-item ${activeTab === item.key ? "active" : ""}`}
+            onClick={() => setActiveTab(item.key)}
           >
             <Icon size={18} />
             <span>{item.label}</span>
